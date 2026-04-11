@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.numerical.analysis.solver.ui.screens.dashboard.HomeScreen
+import com.numerical.analysis.solver.ui.theme.screens.home.HomeScreen
 import com.numerical.analysis.solver.ui.screens.splash.SplashScreen
 
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,13 +34,45 @@ fun AppNavGraph() {
         }
 
         composable("home") {
-            HomeScreen(onChapterClick = { chapterTitle ->
-                if (chapterTitle.contains("Root Finding", ignoreCase = true)) {
-                    navController.navigate("root_finding")
-                } else if (chapterTitle.contains("Linear Systems", ignoreCase = true)) {
-                    navController.navigate("linear_systems")
+            HomeScreen(
+                currentRoute = "home",
+                onNavigate = { route ->
+                    if (route != "home") {
+                        navController.navigate(route) {
+                            popUpTo("home") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                },
+                onChapterClick = { chapterTitle ->
+                    if (chapterTitle.contains("Root Finding", ignoreCase = true)) {
+                        navController.navigate("root_finding")
+                    } else if (chapterTitle.contains("Linear Systems", ignoreCase = true)) {
+                        navController.navigate("linear_systems")
+                    }
                 }
-            })
+            )
+        }
+        
+        composable("history") {
+            androidx.compose.material3.Scaffold(
+                containerColor = androidx.compose.ui.graphics.Color(0xFFF0F4F8)
+            ) { padding ->
+                androidx.compose.foundation.layout.Box(
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    androidx.compose.material3.Text("History coming soon...", color = androidx.compose.ui.graphics.Color.Gray)
+                }
+            }
+        }
+        
+        composable("about") {
+            com.numerical.analysis.solver.ui.screens.about.AboutScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
         
         composable("root_finding") {
