@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation("net.objecthunter:exp4j:0.4.8")
 
     // Testing
     testImplementation(libs.junit)

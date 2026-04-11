@@ -13,7 +13,11 @@ data class RootFindingState(
     val eps: String = "",
     val bracketingResults: List<BracketingStep> = emptyList(),
     val openMethodsResults: List<OpenMethodsStep> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val maxIterations: String = "100",
+    val isLoading: Boolean = false,
+    val isConverged: Boolean = false,
+    val rootResult: Double? = null
 )
 
 data class LinearSystemState(
@@ -21,5 +25,7 @@ data class LinearSystemState(
     val matrixA: Array<DoubleArray> = Array(3) { DoubleArray(3) },
     val vectorB: DoubleArray = DoubleArray(3),
     val result: LinearSystemResult? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val method: String = "gauss",
+    val isLoading: Boolean = false
 )

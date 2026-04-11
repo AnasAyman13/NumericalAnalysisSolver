@@ -7,26 +7,82 @@ import androidx.navigation.compose.rememberNavController
 import com.numerical.analysis.solver.ui.screens.dashboard.HomeScreen
 import com.numerical.analysis.solver.ui.screens.splash.SplashScreen
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
+import com.numerical.analysis.solver.ui.theme.screens.rootfinding.RootFindingScreen
+import com.numerical.analysis.solver.ui.theme.screens.rootfinding.RootFindingResultsScreen
+import com.numerical.analysis.solver.ui.theme.screens.linearsystems.LinearSystemScreen
+import com.numerical.analysis.solver.ui.theme.screens.linearsystems.LinearSystemResultsScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+
 @Composable
 fun AppNavGraph() {
     val navController = rememberNavController()
+    val solverViewModel: SolverViewModel = viewModel()
 
     NavHost(
         navController = navController,
-        startDestination = "splash" // Starts with your "Explosion" Splash
+        startDestination = "splash" 
     ) {
         composable("splash") {
             SplashScreen(onAnimationFinished = {
                 navController.navigate("home") {
-                    popUpTo("splash") { inclusive = true } // Kill splash so back button doesn't go back to it
+                    popUpTo("splash") { inclusive = true }
                 }
             })
         }
 
         composable("home") {
             HomeScreen(onChapterClick = { chapterTitle ->
-                // Future: navController.navigate("chapter_detail/$chapterTitle")
+                if (chapterTitle.contains("Root Finding", ignoreCase = true)) {
+                    navController.navigate("root_finding")
+                } else if (chapterTitle.contains("Linear Systems", ignoreCase = true)) {
+                    navController.navigate("linear_systems")
+                }
             })
+        }
+        
+        composable("root_finding") {
+            RootFindingScreen(
+                viewModel = solverViewModel,
+                onBack = { navController.popBackStack() },
+                onSolveComplete = { method ->
+                    navController.navigate("root_finding_results/$method")
+                }
+            )
+        }
+        
+        composable(
+            route = "root_finding_results/{method}",
+            arguments = listOf(navArgument("method") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val method = backStackEntry.arguments?.getString("method") ?: "Bisection"
+            RootFindingResultsScreen(
+                viewModel = solverViewModel,
+                method = method,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("linear_systems") {
+            LinearSystemScreen(
+                viewModel = solverViewModel,
+                onBack = { navController.popBackStack() },
+                onSolveComplete = {
+                    navController.navigate("linear_systems_results")
+                }
+            )
+        }
+
+        composable("linear_systems_results") {
+            LinearSystemResultsScreen(
+                viewModel = solverViewModel,
+                onBack = { navController.popBackStack() },
+                onNewCalculation = {
+                    navController.popBackStack("linear_systems", inclusive = false)
+                }
+            )
         }
     }
 }
