@@ -38,17 +38,29 @@ android {
         compose = true
     }
 }
-
 dependencies {
+    // 1. Navigation (Unified version)
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 
+    // 2. Material Icons Extended (Fixed syntax & removed duplicates)
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+
+    // 3. Image Loading (Coil)
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // 4. Core & Lifecycle (From Version Catalog)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+
+    // 5. Compose BOM & UI
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
