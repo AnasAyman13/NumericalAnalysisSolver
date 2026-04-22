@@ -1,23 +1,33 @@
 package com.numerical.analysis.solver.ui.theme.screens.home
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,133 +36,274 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.numerical.analysis.solver.data.ChapterData
 import com.numerical.analysis.solver.data.getChaptersList
+import com.numerical.analysis.solver.ui.theme.LocalDarkTheme
 
 val PrimaryBlue = Color(0xFF1586EF)
 val GradientEnd = Color(0xFF4AC29A)
 
+// ─────────────────────────────────────────────────────────────
+//  Main screen
+// ─────────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     currentRoute: String,
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     onNavigate: (String) -> Unit,
     onChapterClick: (String) -> Unit
 ) {
     val chapters = getChaptersList()
 
+    // Adaptive colours
+    val bgColor = MaterialTheme.colorScheme.background
+    val textPrimary = MaterialTheme.colorScheme.onSurface
+
     Scaffold(
-        containerColor = Color(0xFFF0F4F8), // Soft premium background
-        bottomBar = {
-            NavigationBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                    .shadow(16.dp),
-                containerColor = Color.White.copy(alpha = 0.75f), // Transparent glass effect
-                tonalElevation = 0.dp
-            ) {
-                NavigationBarItem(
-                    selected = currentRoute == "home",
-                    onClick = { onNavigate("home") },
-                    icon = { Icon(Icons.Outlined.Home, contentDescription = "Home") },
-                    label = { Text("Home", fontWeight = FontWeight.Medium) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        indicatorColor = PrimaryBlue.copy(alpha = 0.1f),
-                        unselectedIconColor = Color(0xFF94A3B8),
-                        unselectedTextColor = Color(0xFF94A3B8)
-                    )
-                )
-                NavigationBarItem(
-                    selected = currentRoute == "history",
-                    onClick = { onNavigate("history") },
-                    icon = { Icon(Icons.Outlined.History, contentDescription = "History") },
-                    label = { Text("History", fontWeight = FontWeight.Medium) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        indicatorColor = PrimaryBlue.copy(alpha = 0.1f),
-                        unselectedIconColor = Color(0xFF94A3B8),
-                        unselectedTextColor = Color(0xFF94A3B8)
-                    )
-                )
-                NavigationBarItem(
-                    selected = currentRoute == "about",
-                    onClick = { onNavigate("about") },
-                    icon = { Icon(Icons.Outlined.Info, contentDescription = "About") },
-                    label = { Text("About", fontWeight = FontWeight.Medium) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryBlue,
-                        selectedTextColor = PrimaryBlue,
-                        indicatorColor = PrimaryBlue.copy(alpha = 0.1f),
-                        unselectedIconColor = Color(0xFF94A3B8),
-                        unselectedTextColor = Color(0xFF94A3B8)
-                    )
-                )
-            }
-        }
+        containerColor = bgColor,
+        // Remove bottomBar from Scaffold — we'll draw the floating bar ourselves
     ) { padding ->
-        LazyColumn(
+
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            // ── Scrollable content ──────────────────────────────────────
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp),
+                contentPadding = PaddingValues(top = 24.dp, bottom = 120.dp) // bottom room for floating bar
+            ) {
+                // ── Header row with title + theme toggle ─────────────────
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "DASHBOARD",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryBlue,
+                                letterSpacing = 1.5.sp
+                            )
+                            Text(
+                                text = "Numerical Solver",
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textPrimary
+                            )
+                        }
+
+                        // ── Dark / Light Toggle ───────────────────────────
+                        ThemeToggleSwitch(isDark = isDarkTheme, onToggle = onToggleTheme)
+                    }
+                    Spacer(Modifier.height(20.dp))
+                }
+
+                items(chapters) { chapter ->
+                    PremiumChapterCard(
+                        chapter = chapter,
+                        isDark  = isDarkTheme,
+                        onClick = { onChapterClick(chapter.title) }
+                    )
+                    Spacer(Modifier.height(20.dp))
+                }
+
+                item {
+                    Text(
+                        text = "MTI University - CS-252",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            // ── Floating Pill Navigation Bar ────────────────────────────
+            FloatingNavBar(
+                currentRoute = currentRoute,
+                isDark = isDarkTheme,
+                onNavigate = onNavigate,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Floating pill nav bar
+// ─────────────────────────────────────────────────────────────
+private data class NavItem(val route: String, val icon: ImageVector, val label: String)
+
+@Composable
+fun FloatingNavBar(
+    currentRoute: String,
+    isDark: Boolean,
+    onNavigate: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val items = listOf(
+        NavItem("home",    Icons.Outlined.Home,    "Home"),
+        NavItem("history", Icons.Outlined.History, "History"),
+        NavItem("about",   Icons.Outlined.Info,    "About")
+    )
+
+    val pillBg = MaterialTheme.colorScheme.surface
+    val unselectedIcon = MaterialTheme.colorScheme.onSurfaceVariant
+    val unselectedText = unselectedIcon
+
+    Box(
+        modifier = modifier
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 28.dp)
+            .navigationBarsPadding()
+            .fillMaxWidth()
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp),
-            contentPadding = PaddingValues(top = 32.dp, bottom = 40.dp)
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 24.dp,
+                    shape = RoundedCornerShape(50),
+                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    ambientColor = Color.Black.copy(alpha = 0.12f)
+                )
+                .clip(RoundedCornerShape(50))
+                .background(pillBg)
+                .padding(horizontal = 8.dp, vertical = 10.dp)
         ) {
-            item {
-                Text(
-                    text = "DASHBOARD",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue,
-                    letterSpacing = 1.5.sp
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Numerical Solver",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A),
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEach { item ->
+                    val selected = currentRoute == item.route
 
-            items(chapters) { chapter ->
-                PremiumChapterCard(
-                    chapter = chapter,
-                    onClick = { onChapterClick(chapter.title) }
-                )
-                Spacer(Modifier.height(20.dp))
-            }
+                    val iconTint by animateColorAsState(
+                        targetValue = if (selected) PrimaryBlue else unselectedIcon,
+                        animationSpec = tween(250), label = "iconTint"
+                    )
+                    val labelAlpha by animateFloatAsState(
+                        targetValue = if (selected) 1f else 0.75f,
+                        animationSpec = tween(250), label = "labelAlpha"
+                    )
 
-            item {
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = "MTI University - CS-252",
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    color = Color(0xFF94A3B8),
-                    fontSize = 12.sp,
-                )
+                    // Indicator + icon + label column
+                    Column(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(40))
+                            .clickable { onNavigate(item.route) }
+                            .padding(horizontal = 20.dp, vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // Blue pill indicator dot
+                        Box(
+                            modifier = Modifier
+                                .size(width = if (selected) 24.dp else 6.dp, height = 4.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(if (selected) PrimaryBlue else Color.Transparent)
+                        )
+
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.label,
+                            tint = iconTint,
+                            modifier = Modifier.size(24.dp)
+                        )
+
+                        Text(
+                            text = item.label,
+                            fontSize = 11.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (selected) PrimaryBlue else unselectedText,
+                            modifier = Modifier.alpha(labelAlpha)
+                        )
+                    }
+                }
             }
         }
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Dark / Light toggle switch
+// ─────────────────────────────────────────────────────────────
 @Composable
-fun PremiumChapterCard(chapter: ChapterData, onClick: () -> Unit) {
+fun ThemeToggleSwitch(isDark: Boolean, onToggle: () -> Unit) {
+    val trackColor by animateColorAsState(
+        targetValue = MaterialTheme.colorScheme.surfaceVariant,
+        animationSpec = tween(300), label = "trackColor"
+    )
+    val thumbColor by animateColorAsState(
+        targetValue = MaterialTheme.colorScheme.primary,
+        animationSpec = tween(300), label = "thumbColor"
+    )
+    val thumbOffset by animateDpAsState(
+        targetValue = if (isDark) 24.dp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f),
+        label = "thumbOffset"
+    )
+
+    Box(
+        modifier = Modifier
+            .width(56.dp)
+            .height(32.dp)
+            .shadow(4.dp, RoundedCornerShape(50), spotColor = PrimaryBlue.copy(alpha = 0.2f))
+            .clip(RoundedCornerShape(50))
+            .background(trackColor)
+            .clickable(onClick = onToggle),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        // Thumb
+        Box(
+            modifier = Modifier
+                .padding(start = 3.dp)
+                .offset(x = thumbOffset)
+                .size(26.dp)
+                .clip(CircleShape)
+                .background(thumbColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isDark) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
+                contentDescription = if (isDark) "Switch to Light Mode" else "Switch to Dark Mode",
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Chapter card
+// ─────────────────────────────────────────────────────────────
+@Composable
+fun PremiumChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit) {
+    val cardBg = MaterialTheme.colorScheme.surface
+    val textPrimary = MaterialTheme.colorScheme.onSurface
+    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
+    val tagBg = MaterialTheme.colorScheme.surfaceVariant
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 16.dp, 
+                elevation = if (isDark) 8.dp else 16.dp,
                 shape = RoundedCornerShape(24.dp),
-                spotColor = Color(0xFF1586EF).copy(alpha = 0.15f)
+                spotColor = PrimaryBlue.copy(alpha = if (isDark) 0.25f else 0.15f)
             )
             .clip(RoundedCornerShape(24.dp))
             .clickable { onClick() }
-            .background(Color.White),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+            .background(cardBg),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column {
@@ -168,7 +319,6 @@ fun PremiumChapterCard(chapter: ChapterData, onClick: () -> Unit) {
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
-                    // Beautiful gradient overlay
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -189,7 +339,6 @@ fun PremiumChapterCard(chapter: ChapterData, onClick: () -> Unit) {
                     )
                 }
             } else {
-                // Bonus aesthetic
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -206,7 +355,7 @@ fun PremiumChapterCard(chapter: ChapterData, onClick: () -> Unit) {
                 Text(
                     text = chapter.title,
                     modifier = Modifier.padding(start = 24.dp, top = 20.dp),
-                    color = Color(0xFF0F172A),
+                    color = textPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
                 )
@@ -214,22 +363,25 @@ fun PremiumChapterCard(chapter: ChapterData, onClick: () -> Unit) {
 
             Column(Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
                 Text(
-                    text = chapter.description, 
-                    color = Color(0xFF64748B), 
+                    text = chapter.description,
+                    color = textSecondary,
                     fontSize = 14.sp,
                     lineHeight = 20.sp
                 )
-                
                 Spacer(Modifier.height(20.dp))
-
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     chapter.tags.forEach { tag ->
                         Box(
                             modifier = Modifier
-                                .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                .background(tagBg, RoundedCornerShape(8.dp))
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
-                            Text(tag, fontSize = 12.sp, color = PrimaryBlue, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                tag,
+                                fontSize = 12.sp,
+                                color = PrimaryBlue,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }

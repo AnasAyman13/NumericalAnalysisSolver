@@ -32,12 +32,12 @@ fun getChaptersList(): List<ChapterData> {
             icon = Icons.Outlined.GridOn
         ),
         ChapterData(
-            title = "Bonus Features",
-            description = "Advanced mathematical tools.",
-            tags = listOf("Plotter", "Matrix", "Error"),
+            title = "Chapter 3: Golden Section Search",
+            description = "Find the max/min of a single-variable function.",
+            tags = listOf("Optimization", "Golden Ratio"),
             imageRes = null,
             icon = Icons.Outlined.Dataset,
-            isBonus = true
+            isBonus = false
         )
     )
 }

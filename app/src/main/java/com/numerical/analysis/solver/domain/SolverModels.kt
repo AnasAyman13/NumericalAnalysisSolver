@@ -26,3 +26,19 @@ data class LinearSystemResult(
     val isSuccessful: Boolean,
     val errorMessage: String? = null
 )
+
+// Models for Chapter 3: Optimization
+data class GoldenSectionStep(
+    val iter: Int,
+    val xl: Double,
+    val fXl: Double,
+    val x2: Double,
+    val fX2: Double,
+    val x1: Double,
+    val fX1: Double,
+    val xu: Double,
+    val fXu: Double,
+    val xOpt: Double,
+    val fOpt: Double,
+    val error: Double
+)

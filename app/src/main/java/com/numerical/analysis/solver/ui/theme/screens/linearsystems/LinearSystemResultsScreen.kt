@@ -50,11 +50,11 @@ fun LinearSystemResultsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Slate700)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         bottomBar = {
-            Box(Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.9f)).padding(16.dp).navigationBarsPadding()) {
+            Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)).padding(16.dp).navigationBarsPadding()) {
                 Button(
                     onClick = {
                         viewModel.updateLinearSystemInput()
@@ -81,7 +81,7 @@ fun LinearSystemResultsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 border = BorderStroke(1.dp, Slate100),
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
@@ -122,7 +122,7 @@ fun LinearSystemResultsScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, Slate100),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {

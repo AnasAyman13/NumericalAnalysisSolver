@@ -17,7 +17,7 @@ class RootFindingMethods {
         var iter = 0
         var error = 100.0
 
-        if (f(xl) * f(xu) >= 0) return steps
+        if (f(xl) * f(xu) >= 0) throw Exception("f(xl) and f(xu) must have opposite signs. No root bracketed.")
 
         while (true) {
             val xr = (xl + xu) / 2.0
@@ -56,11 +56,11 @@ class RootFindingMethods {
         var iter = 0
         var error = 100.0
 
-        if (f(xl) * f(xu) >= 0) return steps
+        if (f(xl) * f(xu) >= 0) throw Exception("f(xl) and f(xu) must have opposite signs. No root bracketed.")
 
         while (true) {
             val denominator = f(xl) - f(xu)
-            if (denominator == 0.0) break
+            if (denominator == 0.0) throw Exception("Denominator became zero. Method failed.")
 
             val xr = xu - (f(xu) * (xl - xu)) / denominator
 
@@ -78,9 +78,9 @@ class RootFindingMethods {
                 xl = xr
             }
 
-            xrOld = xr
+            if (xr.isNaN() || xr.isInfinite()) throw Exception("Method diverged (NaN or Infinity encountered)")
             iter++
-            if (iter > 100) break
+            if (iter > 100) throw Exception("Failed to converge within 100 iterations")
         }
         return steps
     }
@@ -106,9 +106,10 @@ class RootFindingMethods {
 
             if (error <= eps && iter != 0) break
 
+            if (xiPlus1.isNaN() || xiPlus1.isInfinite()) throw Exception("Method diverged (NaN or Infinity encountered)")
             xi = xiPlus1
             iter++
-            if (iter > 100) break
+            if (iter > 100) throw Exception("Failed to converge within 100 iterations")
         }
         return steps
     }
@@ -127,7 +128,7 @@ class RootFindingMethods {
 
         while (iter <= maxIter) {
             val derivative = fDash(xi)
-            if (derivative == 0.0) break
+            if (derivative == 0.0) throw Exception("Derivative became zero. Method failed.")
 
             val xiPlus1 = xi - (f(xi) / derivative)
 
@@ -139,9 +140,11 @@ class RootFindingMethods {
 
             if (error <= eps && iter != 0) break
 
+            if (xiPlus1.isNaN() || xiPlus1.isInfinite()) throw Exception("Method diverged (NaN or Infinity encountered)")
             xi = xiPlus1
             iter++
         }
+        if (error > eps) throw Exception("Failed to converge within $maxIter iterations")
         return steps
     }
 
@@ -163,18 +166,17 @@ class RootFindingMethods {
             }
 
             val denominator = f(xiMinus1) - f(xi)
-            if (denominator == 0.0) break
+            if (denominator == 0.0) throw Exception("Denominator became zero. Method failed.")
 
             val xiNext = xi - ((f(xi) * (xiMinus1 - xi)) / denominator)
 
             steps.add(OpenMethodsStep(iter, xiMinus1, xi, f(xi), if (iter == 0) 0.0 else error))
 
-            if (error <= eps && iter != 0) break
-
+            if (xiNext.isNaN() || xiNext.isInfinite()) throw Exception("Method diverged (NaN or Infinity encountered)")
             xiMinus1 = xi
             xi = xiNext
             iter++
-            if (iter > 100) break
+            if (iter > 100) throw Exception("Failed to converge within 100 iterations")
         }
         return steps
     }

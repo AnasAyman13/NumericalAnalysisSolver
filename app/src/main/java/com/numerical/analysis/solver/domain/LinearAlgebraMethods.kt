@@ -9,10 +9,28 @@ class LinearAlgebraMethods {
         val a = Array(n) { i -> aMatrix[i].copyOf() }
         val b = bVector.copyOf()
 
-        // Forward Elimination
+        // Forward Elimination with Partial Pivoting
         for (k in 0 until n - 1) {
+            // Partial Pivoting
+            var maxIdx = k
             for (i in k + 1 until n) {
-                if (a[k][k] == 0.0) return LinearSystemResult(DoubleArray(0), false, "Division by zero detected")
+                if (abs(a[i][k]) > abs(a[maxIdx][k])) {
+                    maxIdx = i
+                }
+            }
+            if (maxIdx != k) {
+                val tempA = a[k]
+                a[k] = a[maxIdx]
+                a[maxIdx] = tempA
+                
+                val tempB = b[k]
+                b[k] = b[maxIdx]
+                b[maxIdx] = tempB
+            }
+
+            if (a[k][k] == 0.0) return LinearSystemResult(DoubleArray(0), false, "Division by zero detected (Singular Matrix)")
+
+            for (i in k + 1 until n) {
                 val factor = a[i][k] / a[k][k]
                 for (j in k until n) {
                     a[i][j] -= factor * a[k][j]

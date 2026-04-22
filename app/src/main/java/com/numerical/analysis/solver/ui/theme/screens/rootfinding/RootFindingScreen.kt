@@ -29,16 +29,16 @@ import androidx.compose.ui.unit.sp
 import com.numerical.analysis.solver.ui.screens.state.RootFindingState
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
 
-val PrimaryColor = Color(0xFF1586EF)
-val BackgroundLight = Color(0xFFF6F7F8)
-val Slate50 = Color(0xFFF8FAFC)
-val Slate100 = Color(0xFFF1F5F9)
-val Slate200 = Color(0xFFE2E8F0)
-val Slate400 = Color(0xFF94A3B8)
-val Slate500 = Color(0xFF64748B)
-val Slate600 = Color(0xFF475569)
-val Slate700 = Color(0xFF334155)
-val Slate900 = Color(0xFF0F172A)
+val PrimaryColor @Composable get() = MaterialTheme.colorScheme.primary
+val BackgroundLight @Composable get() = MaterialTheme.colorScheme.background
+val Slate50 @Composable get() = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+val Slate100 @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+val Slate200 @Composable get() = MaterialTheme.colorScheme.outline
+val Slate400 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+val Slate500 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+val Slate600 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+val Slate700 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+val Slate900 @Composable get() = MaterialTheme.colorScheme.onSurface
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,8 +64,9 @@ fun RootFindingScreen(
 
     Scaffold(
         containerColor = BackgroundLight,
+        contentWindowInsets = WindowInsets(0),
         topBar = {
-            Column(modifier = Modifier.background(Color.White)) {
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
                 CenterAlignedTopAppBar(
                     title = { Text("Root Finding", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Slate900) },
                     navigationIcon = {
@@ -73,7 +74,8 @@ fun RootFindingScreen(
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Slate700)
                         }
                     },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                    windowInsets = WindowInsets.statusBars
                 )
                 
                 LazyRow(
@@ -110,29 +112,116 @@ fun RootFindingScreen(
                     }
                 }
             }
-        },
-        bottomBar = {
-            Box(
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .navigationBarsPadding()
+                .imePadding()
+        ) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White.copy(alpha = 0.9f))
-                    .border(1.dp, Slate200)
-                    .padding(16.dp)
-                    .navigationBarsPadding()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(
+                
+                if (state.errorMessage != null) {
+                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), modifier = Modifier.fillMaxWidth()) {
+                        Text(state.errorMessage!!, color = Color(0xFFB91C1C), modifier = Modifier.padding(16.dp), fontSize = 14.sp)
+                    }
+                }
+
+                SectionCard(title = "Function f(x)", icon = Icons.Outlined.Functions) {
+                    OutlinedTextField(
+                        value = state.equation,
+                        onValueChange = { viewModel.updateRootFindingInput(equation = it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("e.g. x^3 - 2x - 5", fontFamily = FontFamily.Monospace, color = Slate400) },
+                        textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = 16.sp, color = Slate900),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Slate50,
+                            unfocusedContainerColor = Slate50,
+                            focusedBorderColor = PrimaryColor,
+                            unfocusedBorderColor = Slate200
+                        ),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                    )
+                    Text("Supports standard math syntax: sin(x), log(x), etc.", fontSize = 12.sp, color = Slate400, modifier = Modifier.padding(top = 8.dp))
+                }
+
+                SectionCard(title = "$selectedMethod Parameters", icon = Icons.Outlined.Tune) {
+                    when (selectedMethod) {
+                        "Bisection", "False Position" -> {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                InputField(modifier = Modifier.weight(1f), label = "Start (x_l)", value = state.xl, onValueChange = { viewModel.updateRootFindingInput(xl = it) })
+                                InputField(modifier = Modifier.weight(1f), label = "End (x_u)", value = state.xu, onValueChange = { viewModel.updateRootFindingInput(xu = it) })
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            InfoBox(text = "Ensure that f(x_l) * f(x_u) < 0. The root must lie within the interval.")
+                        }
+                        "Newton", "Fixed Point" -> {
+                            InputField(modifier = Modifier.fillMaxWidth(), label = "Initial Guess (x0)", value = state.xi, onValueChange = { viewModel.updateRootFindingInput(xi = it) })
+                            if (selectedMethod == "Fixed Point") {
+                                 Spacer(modifier = Modifier.height(12.dp))
+                                 InfoBox(text = "For Fixed Point, f(x) will be treated as g(x). Ensure equation is arranged as x = g(x).")
+                            }
+                        }
+                        "Secant" -> {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                InputField(modifier = Modifier.weight(1f), label = "x(i-1)", value = state.xMinus1, onValueChange = { viewModel.updateRootFindingInput(xMinus1 = it) })
+                                InputField(modifier = Modifier.weight(1f), label = "x(i)", value = state.xi, onValueChange = { viewModel.updateRootFindingInput(xi = it) })
+                            }
+                        }
+                    }
+                }
+
+                SectionCard(title = "Solver Settings", icon = Icons.Outlined.Settings) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        InputField(modifier = Modifier.weight(1f), label = "Tolerance (ε)", value = state.eps, onValueChange = { viewModel.updateRootFindingInput(eps = it) })
+                        InputField(modifier = Modifier.weight(1f), label = "Max Iterations", value = state.maxIterations, onValueChange = { viewModel.updateRootFindingInput(maxIterations = it) }, isNumber = true)
+                    }
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            focusManager.clearFocus()
+                            viewModel.updateRootFindingInput("", "", "", "", "", "1e-6", "100")
+                        },
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Slate100)
-                            .border(1.dp, Slate200, RoundedCornerShape(12.dp))
-                            .clickable {
-                                viewModel.updateRootFindingInput("", "", "", "", "", "1e-6", "100")
-                            },
-                        contentAlignment = Alignment.Center
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Slate50,
+                            contentColor = Slate600
+                        ),
+                        border = BorderStroke(1.dp, Slate200)
                     ) {
-                        Icon(Icons.Outlined.Refresh, contentDescription = "Reset", tint = Slate600)
+                        Icon(
+                            Icons.Outlined.Refresh,
+                            contentDescription = "Reset",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Clear", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                     }
 
                     Button(
@@ -140,94 +229,22 @@ fun RootFindingScreen(
                             focusManager.clearFocus()
                             viewModel.solveRootPath(selectedMethod)
                         },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        modifier = Modifier
+                            .weight(2f)
+                            .height(48.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
-                        contentPadding = PaddingValues(0.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
                     ) {
                         if (state.isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                         } else {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.Calculate, contentDescription = "Solve", modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("SOLVE", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            }
+                            Icon(Icons.Outlined.Calculate, contentDescription = "Solve", modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("SOLVE", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                     }
                 }
             }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            
-            if (state.errorMessage != null) {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), modifier = Modifier.fillMaxWidth()) {
-                    Text(state.errorMessage!!, color = Color(0xFFB91C1C), modifier = Modifier.padding(16.dp), fontSize = 14.sp)
-                }
-            }
-
-            SectionCard(title = "Function f(x)", icon = Icons.Outlined.Functions) {
-                OutlinedTextField(
-                    value = state.equation,
-                    onValueChange = { viewModel.updateRootFindingInput(equation = it) },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. x^3 - 2x - 5", fontFamily = FontFamily.Monospace, color = Slate400) },
-                    textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = 16.sp, color = Slate900),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Slate50,
-                        unfocusedContainerColor = Slate50,
-                        focusedBorderColor = PrimaryColor,
-                        unfocusedBorderColor = Slate200
-                    ),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-                )
-                Text("Supports standard math syntax: sin(x), log(x), etc.", fontSize = 12.sp, color = Slate400, modifier = Modifier.padding(top = 8.dp))
-            }
-
-            SectionCard(title = "$selectedMethod Parameters", icon = Icons.Outlined.Tune) {
-                when (selectedMethod) {
-                    "Bisection", "False Position" -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InputField(modifier = Modifier.weight(1f), label = "Start (x_l)", value = state.xl, onValueChange = { viewModel.updateRootFindingInput(xl = it) })
-                            InputField(modifier = Modifier.weight(1f), label = "End (x_u)", value = state.xu, onValueChange = { viewModel.updateRootFindingInput(xu = it) })
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        InfoBox(text = "Ensure that f(x_l) * f(x_u) < 0. The root must lie within the interval.")
-                    }
-                    "Newton", "Fixed Point" -> {
-                        InputField(modifier = Modifier.fillMaxWidth(), label = "Initial Guess (x0)", value = state.xi, onValueChange = { viewModel.updateRootFindingInput(xi = it) })
-                        if (selectedMethod == "Fixed Point") {
-                             Spacer(modifier = Modifier.height(12.dp))
-                             InfoBox(text = "For Fixed Point, f(x) will be treated as g(x). Ensure equation is arranged as x = g(x).")
-                        }
-                    }
-                    "Secant" -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InputField(modifier = Modifier.weight(1f), label = "x(i-1)", value = state.xMinus1, onValueChange = { viewModel.updateRootFindingInput(xMinus1 = it) })
-                            InputField(modifier = Modifier.weight(1f), label = "x(i)", value = state.xi, onValueChange = { viewModel.updateRootFindingInput(xi = it) })
-                        }
-                    }
-                }
-            }
-
-            SectionCard(title = "Solver Settings", icon = Icons.Outlined.Settings) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    InputField(modifier = Modifier.weight(1f), label = "Tolerance (ε)", value = state.eps, onValueChange = { viewModel.updateRootFindingInput(eps = it) })
-                    InputField(modifier = Modifier.weight(1f), label = "Max Iterations", value = state.maxIterations, onValueChange = { viewModel.updateRootFindingInput(maxIterations = it) }, isNumber = true)
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
@@ -237,7 +254,7 @@ fun SectionCard(title: String, icon: ImageVector, content: @Composable ColumnSco
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

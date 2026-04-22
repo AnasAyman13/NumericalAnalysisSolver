@@ -13,17 +13,22 @@ import com.numerical.analysis.solver.ui.theme.screens.rootfinding.RootFindingScr
 import com.numerical.analysis.solver.ui.theme.screens.rootfinding.RootFindingResultsScreen
 import com.numerical.analysis.solver.ui.theme.screens.linearsystems.LinearSystemScreen
 import com.numerical.analysis.solver.ui.theme.screens.linearsystems.LinearSystemResultsScreen
+import com.numerical.analysis.solver.ui.theme.screens.optimization.GoldenSectionScreen
+import com.numerical.analysis.solver.ui.theme.screens.optimization.GoldenSectionResultsScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
 @Composable
-fun AppNavGraph() {
+fun AppNavGraph(
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val solverViewModel: SolverViewModel = viewModel()
 
     NavHost(
         navController = navController,
-        startDestination = "splash" 
+        startDestination = "splash"
     ) {
         composable("splash") {
             SplashScreen(onAnimationFinished = {
@@ -36,12 +41,13 @@ fun AppNavGraph() {
         composable("home") {
             HomeScreen(
                 currentRoute = "home",
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
                 onNavigate = { route ->
                     if (route != "home") {
                         navController.navigate(route) {
                             popUpTo("home") { saveState = true }
                             launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 },
@@ -50,23 +56,29 @@ fun AppNavGraph() {
                         navController.navigate("root_finding")
                     } else if (chapterTitle.contains("Linear Systems", ignoreCase = true)) {
                         navController.navigate("linear_systems")
+                    } else if (chapterTitle.contains("Golden Section", ignoreCase = true)) {
+                        navController.navigate("golden_section")
                     }
                 }
             )
         }
-        
+
         composable("history") {
-            androidx.compose.material3.Scaffold(
-                containerColor = androidx.compose.ui.graphics.Color(0xFFF0F4F8)
-            ) { padding ->
-                androidx.compose.foundation.layout.Box(
-                    contentAlignment = androidx.compose.ui.Alignment.Center
-                ) {
-                    androidx.compose.material3.Text("History coming soon...", color = androidx.compose.ui.graphics.Color.Gray)
+            com.numerical.analysis.solver.ui.theme.screens.history.HistoryScreen(
+                isDarkTheme  = isDarkTheme,
+                viewModel = solverViewModel,
+                currentRoute = "history",
+                onNavigate   = { route ->
+                    if (route != "history") {
+                        navController.navigate(route) {
+                            popUpTo("home") { saveState = true }
+                            launchSingleTop = true
+                        }
+                    }
                 }
-            }
+            )
         }
-        
+
         composable("about") {
             com.numerical.analysis.solver.ui.screens.about.AboutScreen(
                 onNavigateBack = {
@@ -74,7 +86,7 @@ fun AppNavGraph() {
                 }
             )
         }
-        
+
         composable("root_finding") {
             RootFindingScreen(
                 viewModel = solverViewModel,
@@ -84,7 +96,7 @@ fun AppNavGraph() {
                 }
             )
         }
-        
+
         composable(
             route = "root_finding_results/{method}",
             arguments = listOf(navArgument("method") { type = NavType.StringType })
@@ -114,6 +126,23 @@ fun AppNavGraph() {
                 onNewCalculation = {
                     navController.popBackStack("linear_systems", inclusive = false)
                 }
+            )
+        }
+
+        composable("golden_section") {
+            GoldenSectionScreen(
+                viewModel = solverViewModel,
+                onBack = { navController.popBackStack() },
+                onSolveComplete = {
+                    navController.navigate("golden_section_results")
+                }
+            )
+        }
+
+        composable("golden_section_results") {
+            GoldenSectionResultsScreen(
+                viewModel = solverViewModel,
+                onBack = { navController.popBackStack() }
             )
         }
     }

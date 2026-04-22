@@ -24,15 +24,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val BackgroundLight = Color(0xFFF6F7F8)
-private val PrimaryBlue = Color(0xFF1586EF)
-private val PrimaryBlueLight = Color(0x1A1586EF)
-private val Slate900 = Color(0xFF0F172A)
-private val Slate600 = Color(0xFF475569)
-private val Slate500 = Color(0xFF64748B)
-private val Slate400 = Color(0xFF94A3B8)
-private val Slate100 = Color(0xFFF1F5F9)
-private val Slate50 = Color(0xFFF8FAFC)
+private val BackgroundLight @Composable get() = MaterialTheme.colorScheme.background
+private val PrimaryBlue @Composable get() = MaterialTheme.colorScheme.primary
+private val PrimaryBlueLight @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+private val Slate900 @Composable get() = MaterialTheme.colorScheme.onSurface
+private val Slate600 @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val Slate500 @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+private val Slate400 @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+private val Slate100 @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+private val Slate50 @Composable get() = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
 
 @Composable
 fun AboutScreen(
@@ -142,7 +142,7 @@ private fun AppHeader() {
 private fun CourseInformationCard() {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -213,7 +213,7 @@ private fun FacultySection() {
 
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column {
@@ -326,7 +326,7 @@ private fun TeamMemberItem(
 ) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
