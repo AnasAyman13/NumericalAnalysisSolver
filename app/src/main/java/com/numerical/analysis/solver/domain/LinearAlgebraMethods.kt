@@ -9,45 +9,36 @@ class LinearAlgebraMethods {
         val a = Array(n) { i -> aMatrix[i].copyOf() }
         val b = bVector.copyOf()
 
-        // Forward Elimination with Partial Pivoting
-        for (k in 0 until n - 1) {
-            // Partial Pivoting
-            var maxIdx = k
-            for (i in k + 1 until n) {
-                if (abs(a[i][k]) > abs(a[maxIdx][k])) {
-                    maxIdx = i
-                }
-            }
-            if (maxIdx != k) {
-                val tempA = a[k]
-                a[k] = a[maxIdx]
-                a[maxIdx] = tempA
-                
-                val tempB = b[k]
-                b[k] = b[maxIdx]
-                b[maxIdx] = tempB
-            }
+        var pivot = 0
+        while (pivot < n - 1) {
+            if (a[pivot][pivot] == 0.0) return LinearSystemResult(DoubleArray(0), false, "Zero pivot encountered. Singular matrix.")
 
-            if (a[k][k] == 0.0) return LinearSystemResult(DoubleArray(0), false, "Division by zero detected (Singular Matrix)")
-
-            for (i in k + 1 until n) {
-                val factor = a[i][k] / a[k][k]
-                for (j in k until n) {
-                    a[i][j] -= factor * a[k][j]
+            var row = pivot + 1
+            while (row < n) {
+                val multiplier = a[row][pivot] / a[pivot][pivot]
+                var col = pivot
+                while (col < n) {
+                    a[row][col] = a[row][col] - multiplier * a[pivot][col]
+                    col++
                 }
-                b[i] -= factor * b[k]
+                b[row] = b[row] - multiplier * b[pivot]
+                row++
             }
+            pivot++
         }
 
-        // Back Substitution
         val x = DoubleArray(n)
-        for (i in n - 1 downTo 0) {
+        var i = n - 1
+        while (i >= 0) {
             var sum = b[i]
-            for (j in i + 1 until n) {
-                sum -= a[i][j] * x[j]
+            var j = i + 1
+            while (j < n) {
+                sum = sum - a[i][j] * x[j]
+                j++
             }
-            if (a[i][i] == 0.0) return LinearSystemResult(DoubleArray(0), false, "System has no unique solution")
+            if (a[i][i] == 0.0) return LinearSystemResult(DoubleArray(0), false, "System has no unique solution.")
             x[i] = sum / a[i][i]
+            i--
         }
 
         return LinearSystemResult(x, true)
@@ -58,133 +49,167 @@ class LinearAlgebraMethods {
         val a = Array(n) { i -> aMatrix[i].copyOf() }
         val b = bVector.copyOf()
 
-        for (k in 0 until n) {
-            val pivot = a[k][k]
-            if (pivot == 0.0) return LinearSystemResult(DoubleArray(0), false, "Zero pivot encountered")
+        var k = 0
+        while (k < n) {
+            val pivotValue = a[k][k]
+            if (pivotValue == 0.0) return LinearSystemResult(DoubleArray(0), false, "Zero pivot encountered.")
 
-            for (j in 0 until n) {
-                a[k][j] /= pivot
+            var j = 0
+            while (j < n) {
+                a[k][j] = a[k][j] / pivotValue
+                j++
             }
-            b[k] /= pivot
+            b[k] = b[k] / pivotValue
 
-            for (i in 0 until n) {
+            var i = 0
+            while (i < n) {
                 if (i != k) {
                     val factor = a[i][k]
-                    for (j in 0 until n) {
-                        a[i][j] -= factor * a[k][j]
+                    j = 0
+                    while (j < n) {
+                        a[i][j] = a[i][j] - factor * a[k][j]
+                        j++
                     }
-                    b[i] -= factor * b[k]
+                    b[i] = b[i] - factor * b[k]
                 }
+                i++
             }
+            k++
         }
 
         return LinearSystemResult(b, true)
     }
 
     fun luDecomposition(aMatrix: Array<DoubleArray>, bVector: DoubleArray): LinearSystemResult {
-        val n = bVector.size
-        val l = Array(n) { DoubleArray(n) }
+        val n = 3
+        val a = Array(n) { i -> aMatrix[i].take(4).toDoubleArray() }
+
+        val m21 = a[1][0] / a[0][0]
+        val m31 = a[2][0] / a[0][0]
+
+        var col = 0
+        while (col < n) {
+            a[1][col] = a[1][col] - m21 * a[0][col]
+            col++
+        }
+
+        col = 0
+        while (col < n) {
+            a[2][col] = a[2][col] - m31 * a[0][col]
+            col++
+        }
+
+        val m32 = a[2][1] / a[1][1]
+
+        col = 0
+        while (col < n) {
+            a[2][col] = a[2][col] - m32 * a[1][col]
+            col++
+        }
+
         val u = Array(n) { DoubleArray(n) }
-
-        // Doolittle Algorithm
-        for (i in 0 until n) {
-            // Upper Triangular
-            for (k in i until n) {
-                var sum = 0.0
-                for (j in 0 until i) {
-                    sum += l[i][j] * u[j][k]
-                }
-                u[i][k] = aMatrix[i][k] - sum
+        var row = 0
+        while (row < n) {
+            col = 0
+            while (col < n) {
+                u[row][col] = a[row][col]
+                col++
             }
+            row++
+        }
 
-            // Lower Triangular
-            for (k in i until n) {
-                if (i == k) {
-                    l[i][i] = 1.0
+        val l = Array(n) { DoubleArray(n) }
+        row = 0
+        while (row < n) {
+            col = 0
+            while (col < n) {
+                if (row == col) {
+                    l[row][col] = 1.0
                 } else {
-                    var sum = 0.0
-                    for (j in 0 until i) {
-                        sum += l[k][j] * u[j][i]
-                    }
-                    if (u[i][i] == 0.0) return LinearSystemResult(DoubleArray(0), false, "LU decomposition failed")
-                    l[k][i] = (aMatrix[k][i] - sum) / u[i][i]
+                    l[row][col] = 0.0
                 }
+                col++
             }
+            row++
         }
+        l[1][0] = m21
+        l[2][0] = m31
+        l[2][1] = m32
 
-        // Forward Substitution (Ly = b)
-        val y = DoubleArray(n)
-        for (i in 0 until n) {
-            var sum = bVector[i]
-            for (j in 0 until i) {
-                sum -= l[i][j] * y[j]
-            }
-            y[i] = sum / l[i][i]
-        }
+        val b = bVector
 
-        // Back Substitution (Ux = y)
-        val x = DoubleArray(n)
-        for (i in n - 1 downTo 0) {
-            var sum = y[i]
-            for (j in i + 1 until n) {
-                sum -= u[i][j] * x[j]
-            }
-            if (u[i][i] == 0.0) return LinearSystemResult(DoubleArray(0), false, "No unique solution")
-            x[i] = sum / u[i][i]
-        }
+        val c1 = b[0] / l[0][0]
+        val c2 = (b[1] - l[1][0] * c1) / l[1][1]
+        val c3 = (b[2] - (l[2][0] * c1 + l[2][1] * c2)) / l[2][2]
 
-        return LinearSystemResult(x, true)
+        val x3 = c3 / u[2][2]
+        val x2 = (c2 - u[1][2] * x3) / u[1][1]
+        val x1 = (c1 - (u[0][1] * x2 + u[0][2] * x3)) / u[0][0]
+
+        val result = DoubleArray(3)
+        result[0] = x1
+        result[1] = x2
+        result[2] = x3
+
+        return LinearSystemResult(result, true)
     }
 
     fun cramersRule(aMatrix: Array<DoubleArray>, bVector: DoubleArray): LinearSystemResult {
-        val n = bVector.size
-        val d = calculateDeterminant(aMatrix)
+        val a = aMatrix
 
-        if (d == 0.0) return LinearSystemResult(DoubleArray(0), false, "Determinant is zero. No unique solution.")
+        val r0 = a[0][0] * ((a[1][1] * a[2][2]) - (a[1][2] * a[2][1]))
+        val r1 = a[0][1] * ((a[1][0] * a[2][2]) - (a[1][2] * a[2][0]))
+        val r2 = a[0][2] * ((a[1][0] * a[2][1]) - (a[1][1] * a[2][0]))
+        val detA = r0 - r1 + r2
 
-        val x = DoubleArray(n)
-        for (i in 0 until n) {
-            val modifiedMatrix = Array(n) { row -> aMatrix[row].copyOf() }
-            for (row in 0 until n) {
-                modifiedMatrix[row][i] = bVector[row]
-            }
-            x[i] = calculateDeterminant(modifiedMatrix) / d
+        if (detA == 0.0) {
+            return LinearSystemResult(DoubleArray(0), false, "Determinant is zero. No unique solution.")
         }
 
-        return LinearSystemResult(x, true)
-    }
+        val originalCol0 = DoubleArray(3)
+        val originalCol1 = DoubleArray(3)
+        val originalCol2 = DoubleArray(3)
 
-    private fun calculateDeterminant(matrix: Array<DoubleArray>): Double {
-        val n = matrix.size
-        val a = Array(n) { i -> matrix[i].copyOf() }
-        var det = 1.0
-
-        for (i in 0 until n) {
-            var pivot = i
-            for (j in i + 1 until n) {
-                if (abs(a[j][i]) > abs(a[pivot][i])) {
-                    pivot = j
-                }
-            }
-
-            if (pivot != i) {
-                val temp = a[i]
-                a[i] = a[pivot]
-                a[pivot] = temp
-                det *= -1.0
-            }
-
-            if (a[i][i] == 0.0) return 0.0
-
-            det *= a[i][i]
-
-            for (j in i + 1 until n) {
-                val factor = a[j][i] / a[i][i]
-                for (k in i until n) {
-                    a[j][k] -= factor * a[i][k]
-                }
-            }
+        var rowIdx = 0
+        while (rowIdx < 3) {
+            originalCol0[rowIdx] = a[rowIdx][0]
+            originalCol1[rowIdx] = a[rowIdx][1]
+            originalCol2[rowIdx] = a[rowIdx][2]
+            rowIdx++
         }
-        return det
+
+        rowIdx = 0
+        while (rowIdx < 3) { a[rowIdx][0] = bVector[rowIdx]; rowIdx++ }
+        val t00 = a[0][0] * ((a[1][1] * a[2][2]) - (a[1][2] * a[2][1]))
+        val t01 = a[0][1] * ((a[1][0] * a[2][2]) - (a[1][2] * a[2][0]))
+        val t02 = a[0][2] * ((a[1][0] * a[2][1]) - (a[1][1] * a[2][0]))
+        val det1 = t00 - t01 + t02
+        rowIdx = 0
+        while (rowIdx < 3) { a[rowIdx][0] = originalCol0[rowIdx]; rowIdx++ }
+
+        rowIdx = 0
+        while (rowIdx < 3) { a[rowIdx][1] = bVector[rowIdx]; rowIdx++ }
+        val t10 = a[0][0] * ((a[1][1] * a[2][2]) - (a[1][2] * a[2][1]))
+        val t11 = a[0][1] * ((a[1][0] * a[2][2]) - (a[1][2] * a[2][0]))
+        val t12 = a[0][2] * ((a[1][0] * a[2][1]) - (a[1][1] * a[2][0]))
+        val det2 = t10 - t11 + t12
+        rowIdx = 0
+        while (rowIdx < 3) { a[rowIdx][1] = originalCol1[rowIdx]; rowIdx++ }
+
+        rowIdx = 0
+        while (rowIdx < 3) { a[rowIdx][2] = bVector[rowIdx]; rowIdx++ }
+        val t20 = a[0][0] * ((a[1][1] * a[2][2]) - (a[1][2] * a[2][1]))
+        val t21 = a[0][1] * ((a[1][0] * a[2][2]) - (a[1][2] * a[2][0]))
+        val t22 = a[0][2] * ((a[1][0] * a[2][1]) - (a[1][1] * a[2][0]))
+        val det3 = t20 - t21 + t22
+        rowIdx = 0
+        while (rowIdx < 3) { a[rowIdx][2] = originalCol2[rowIdx]; rowIdx++ }
+
+        val result = DoubleArray(3)
+        result[0] = det1 / detA
+        result[1] = det2 / detA
+        result[2] = det3 / detA
+
+        return LinearSystemResult(result, true)
     }
 }

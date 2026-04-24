@@ -35,6 +35,68 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
     private val _history = MutableStateFlow<List<HistoryEntry>>(emptyList())
     val history: StateFlow<List<HistoryEntry>> = _history.asStateFlow()
 
+    // Holds the history entry the user just tapped — read by HistoryDetailScreen
+    private val _selectedHistoryEntry = MutableStateFlow<HistoryEntry?>(null)
+    val selectedHistoryEntry: StateFlow<HistoryEntry?> = _selectedHistoryEntry.asStateFlow()
+
+    fun selectHistoryEntry(entry: HistoryEntry) {
+        _selectedHistoryEntry.value = entry
+    }
+
+    // -------------------------------------------------------------------------
+    // loadHistoryItem
+    // -------------------------------------------------------------------------
+    // Called when the user taps a history card and wants to re-run it.
+    //
+    // What we CAN restore: the equation — it is saved in the subtitle field
+    //   as  "f(x) = x^3 - 2*x - 5"  or  "Max of f(x) = x^2"
+    //   We strip the prefix and put the equation back into the correct state.
+    //
+    // What we CANNOT restore: xl, xu, xi, tolerance — they were never stored
+    //   in the database.  The user will need to re-enter those values.
+    //
+    // Returns the route string so the caller (NavGraph) knows where to navigate.
+    // -------------------------------------------------------------------------
+    fun loadHistoryItem(entry: HistoryEntry): String {
+
+        // Step 1: Extract the equation text from the subtitle.
+        //  Root Finding subtitle  → "f(x) = x^3 - 2*x - 5"
+        //  Optimization subtitle  → "Max of f(x) = x^2"  or  "Min of f(x) = …"
+        val equation = when {
+            entry.subtitle.contains("f(x) = ") ->
+                entry.subtitle.substringAfter("f(x) = ").trim()
+            else ->
+                ""   // unknown format — leave the field empty
+        }
+
+        // Step 2: Look at the title to decide which solver this belongs to,
+        //         then pre-fill only the equation in the right ViewModel state.
+        return when {
+
+            // Root-finding methods — put equation in rootFindingState
+            entry.title in listOf(
+                "Bisection", "False Position",
+                "Newton", "Fixed Point", "Secant"
+            ) -> {
+                // Use the existing updateRootFindingInput so we don't break any other logic
+                updateRootFindingInput(equation = equation)
+                "root_finding"   // the NavGraph will navigate here
+            }
+
+            // Optimization — put equation in optimizationState
+            entry.title.contains("Golden", ignoreCase = true) -> {
+                val isMax = entry.subtitle.startsWith("Max", ignoreCase = true)
+                updateOptimizationInput(equation = equation, isMax = isMax)
+                "golden_section"   // the NavGraph will navigate here
+            }
+
+            // Linear Systems — nothing useful to restore (no equation stored)
+            else -> {
+                "linear_systems"
+            }
+        }
+    }
+
     private val _optimizationState = MutableStateFlow(OptimizationState())
     val optimizationState: StateFlow<OptimizationState> = _optimizationState.asStateFlow()
 
