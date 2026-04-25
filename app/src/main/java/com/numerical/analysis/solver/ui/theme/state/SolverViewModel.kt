@@ -26,16 +26,15 @@ import java.util.Locale
 
 class SolverViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val rootFindingMethods = RootFindingMethods()
+    private val rootFindingMethods  = RootFindingMethods()
     private val linearAlgebraMethods = LinearAlgebraMethods()
-    private val optimizationMethods = OptimizationMethods()
-    private val mathParser = MathParser()
-    private val historyRepository = HistoryRepository(application)
+    private val optimizationMethods  = OptimizationMethods()
+    private val mathParser           = MathParser()
+    private val historyRepository    = HistoryRepository(application)
 
     private val _history = MutableStateFlow<List<HistoryEntry>>(emptyList())
     val history: StateFlow<List<HistoryEntry>> = _history.asStateFlow()
 
-    // Holds the history entry the user just tapped — read by HistoryDetailScreen
     private val _selectedHistoryEntry = MutableStateFlow<HistoryEntry?>(null)
     val selectedHistoryEntry: StateFlow<HistoryEntry?> = _selectedHistoryEntry.asStateFlow()
 
@@ -46,54 +45,59 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
     // -------------------------------------------------------------------------
     // loadHistoryItem
     // -------------------------------------------------------------------------
-    // Called when the user taps a history card and wants to re-run it.
+    // Restores ALL saved input fields into the correct ViewModel state so that
+    // when the solver screen opens, every TextField is already populated.
     //
-    // What we CAN restore: the equation — it is saved in the subtitle field
-    //   as  "f(x) = x^3 - 2*x - 5"  or  "Max of f(x) = x^2"
-    //   We strip the prefix and put the equation back into the correct state.
-    //
-    // What we CANNOT restore: xl, xu, xi, tolerance — they were never stored
-    //   in the database.  The user will need to re-enter those values.
-    //
-    // Returns the route string so the caller (NavGraph) knows where to navigate.
+    // Returns the destination route string so the NavGraph knows where to go.
     // -------------------------------------------------------------------------
     fun loadHistoryItem(entry: HistoryEntry): String {
-
-        // Step 1: Extract the equation text from the subtitle.
-        //  Root Finding subtitle  → "f(x) = x^3 - 2*x - 5"
-        //  Optimization subtitle  → "Max of f(x) = x^2"  or  "Min of f(x) = …"
-        val equation = when {
-            entry.subtitle.contains("f(x) = ") ->
-                entry.subtitle.substringAfter("f(x) = ").trim()
-            else ->
-                ""   // unknown format — leave the field empty
-        }
-
-        // Step 2: Look at the title to decide which solver this belongs to,
-        //         then pre-fill only the equation in the right ViewModel state.
         return when {
 
-            // Root-finding methods — put equation in rootFindingState
-            entry.title in listOf(
-                "Bisection", "False Position",
-                "Newton", "Fixed Point", "Secant"
-            ) -> {
-                // Use the existing updateRootFindingInput so we don't break any other logic
-                updateRootFindingInput(equation = equation)
-                "root_finding"   // the NavGraph will navigate here
+            entry.title in listOf("Bisection", "False Position", "Newton", "Fixed Point", "Secant") -> {
+                _rootFindingState.update { current ->
+                    current.copy(
+                        equation      = entry.equation,
+                        derivative    = entry.derivative,
+                        xl            = entry.xl,
+                        xu            = entry.xu,
+                        xi            = entry.xi,
+                        xMinus1       = entry.xMinus1,
+                        eps           = entry.eps,
+                        maxIterations = entry.maxIterations,
+                        isConverged   = false,
+                        rootResult    = null,
+                        stoppingReason = null,
+                        errorMessage  = null
+                    )
+                }
+                
+                // Sync the pager index based on the saved method type
+                when (entry.title) {
+                    "Bisection"      -> _selectedMethodIndex.value = 0
+                    "False Position" -> _selectedMethodIndex.value = 1
+                    "Newton"         -> _selectedMethodIndex.value = 2
+                    "Secant"         -> _selectedMethodIndex.value = 3
+                    "Fixed Point"    -> _selectedMethodIndex.value = 4
+                }
+                "root_finding"
             }
 
-            // Optimization — put equation in optimizationState
             entry.title.contains("Golden", ignoreCase = true) -> {
                 val isMax = entry.subtitle.startsWith("Max", ignoreCase = true)
-                updateOptimizationInput(equation = equation, isMax = isMax)
-                "golden_section"   // the NavGraph will navigate here
+                _optimizationState.update { current ->
+                    current.copy(
+                        equation = entry.equation,
+                        xl       = entry.xl,
+                        xu       = entry.xu,
+                        eps      = entry.eps,
+                        isMax    = isMax,
+                        errorMessage = null
+                    )
+                }
+                "golden_section"
             }
 
-            // Linear Systems — nothing useful to restore (no equation stored)
-            else -> {
-                "linear_systems"
-            }
+            else -> "linear_systems"
         }
     }
 
@@ -102,29 +106,36 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _rootFindingState = MutableStateFlow(RootFindingState())
     val rootFindingState: StateFlow<RootFindingState> = _rootFindingState.asStateFlow()
-    
+
+    private val _selectedMethodIndex = androidx.compose.runtime.mutableStateOf(0)
+    val selectedMethodIndex: androidx.compose.runtime.State<Int> = _selectedMethodIndex
+
     private val _linearSystemState = MutableStateFlow(LinearSystemState())
     val linearSystemState: StateFlow<LinearSystemState> = _linearSystemState.asStateFlow()
 
     fun updateRootFindingInput(
         equation: String? = null,
+        derivative: String? = null,
         xl: String? = null,
         xu: String? = null,
         xi: String? = null,
         xMinus1: String? = null,
         eps: String? = null,
-        maxIterations: String? = null
+        maxIterations: String? = null,
+        toleranceMode: com.numerical.analysis.solver.ui.screens.state.ToleranceMode? = null
     ) {
-        _rootFindingState.update { currentState ->
-            currentState.copy(
-                equation = equation ?: currentState.equation,
-                xl = xl ?: currentState.xl,
-                xu = xu ?: currentState.xu,
-                xi = xi ?: currentState.xi,
-                xMinus1 = xMinus1 ?: currentState.xMinus1,
-                eps = eps ?: currentState.eps,
-                maxIterations = maxIterations ?: currentState.maxIterations,
-                errorMessage = null
+        _rootFindingState.update { s ->
+            s.copy(
+                equation      = equation      ?: s.equation,
+                derivative    = derivative    ?: s.derivative,
+                xl            = xl            ?: s.xl,
+                xu            = xu            ?: s.xu,
+                xi            = xi            ?: s.xi,
+                xMinus1       = xMinus1       ?: s.xMinus1,
+                eps           = eps           ?: s.eps,
+                maxIterations = maxIterations ?: s.maxIterations,
+                toleranceMode = toleranceMode ?: s.toleranceMode,
+                errorMessage  = null
             )
         }
     }
@@ -134,67 +145,101 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
             _rootFindingState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val state = _rootFindingState.value
-                val eps = state.eps.toDoubleOrNull() ?: 1e-6
-                val maxIter = state.maxIterations.toIntOrNull() ?: 100
-                val f = mathParser.parseFunction(state.equation)
-
                 val (step1, conv, res) = withContext(Dispatchers.Default) {
+                    val eps     = state.eps.toDoubleOrNull() ?: 1e-6
+                    val maxIter = state.maxIterations.toIntOrNull() ?: 100
+                    val f       = mathParser.parseFunction(state.equation)
+
                     when (method) {
                         "Bisection" -> {
                             val xl = state.xl.toDouble()
                             val xu = state.xu.toDouble()
-                            val results = rootFindingMethods.bisection(xl, xu, eps, f)
+                            val results = rootFindingMethods.bisection(xl, xu, eps, maxIter, state.toleranceMode, f)
                             if (results.isEmpty()) throw Exception("Zero iterations computed.")
-                            Triple(results, results.isNotEmpty() && results.last().error <= eps, results.lastOrNull()?.xr)
+                            Triple(results, results.last().error <= eps, results.lastOrNull()?.xr)
                         }
                         "False Position" -> {
                             val xl = state.xl.toDouble()
                             val xu = state.xu.toDouble()
-                            val results = rootFindingMethods.falsePosition(xl, xu, eps, f)
+                            val results = rootFindingMethods.falsePosition(xl, xu, eps, maxIter, state.toleranceMode, f)
                             if (results.isEmpty()) throw Exception("Zero iterations computed.")
-                            Triple(results, results.isNotEmpty() && results.last().error <= eps, results.lastOrNull()?.xr)
+                            Triple(results, results.last().error <= eps, results.lastOrNull()?.xr)
                         }
                         "Newton" -> {
-                            val xi = state.xi.toDouble()
-                            val fDash = mathParser.parseDerivative(state.equation)
-                            val results = rootFindingMethods.newton(xi, eps, maxIter, f, fDash)
+                            val xi    = state.xi.toDouble()
+                            val fDash = mathParser.parseFunction(state.derivative)
+                            val results = rootFindingMethods.newton(xi, eps, maxIter, state.toleranceMode, f, fDash)
                             if (results.isEmpty()) throw Exception("Zero iterations computed.")
-                            Triple(results, results.isNotEmpty() && results.last().error <= eps, results.lastOrNull()?.xiPlus1)
+                            Triple(results, results.last().error <= eps, results.lastOrNull()?.xiPlus1)
                         }
                         "Fixed Point" -> {
                             val xi = state.xi.toDouble()
-                            val results = rootFindingMethods.fixedPoint(xi, eps, f)
+                            val results = rootFindingMethods.fixedPoint(xi, eps, maxIter, state.toleranceMode, f)
                             if (results.isEmpty()) throw Exception("Zero iterations computed.")
-                            Triple(results, results.isNotEmpty() && results.last().error <= eps, results.lastOrNull()?.xiPlus1)
+                            Triple(results, results.last().error <= eps, results.lastOrNull()?.xiPlus1)
                         }
                         "Secant" -> {
-                            val xi = state.xi.toDouble()
+                            val xi      = state.xi.toDouble()
                             val xMinus1 = state.xMinus1.toDouble()
-                            val results = rootFindingMethods.secant(xMinus1, xi, eps, f)
+                            val results = rootFindingMethods.secant(xMinus1, xi, eps, maxIter, state.toleranceMode, f)
                             if (results.isEmpty()) throw Exception("Zero iterations computed.")
-                            Triple(results, results.isNotEmpty() && results.last().error <= eps, results.lastOrNull()?.xiPlus1)
+                            Triple(results, results.last().error <= eps, results.lastOrNull()?.xiPlus1)
                         }
                         else -> throw Exception("Unknown method")
                     }
                 }
-                
+
+                // Save ALL input fields so Re-run can fully restore them later
                 val resultEntry = HistoryEntry(
-                    title = method,
-                    subtitle = "f(x) = ${state.equation}",
-                    result = "root ≈ ${String.format(Locale.US, "%.5f", res ?: 0.0)}",
-                    timestamp = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(Date()),
-                    accentColor = Color(0xFFE11D48)
+                    title         = method,
+                    subtitle      = "f(x) = ${state.equation}",
+                    result        = "root ≈ ${String.format(Locale.US, "%.5f", res ?: 0.0)}",
+                    timestamp     = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(Date()),
+                    accentColor   = Color(0xFFE11D48),
+                    equation      = state.equation,
+                    derivative    = state.derivative,
+                    xl            = state.xl,
+                    xu            = state.xu,
+                    xi            = state.xi,
+                    xMinus1       = state.xMinus1,
+                    eps           = state.eps,
+                    maxIterations = state.maxIterations,
+                    methodType    = method
                 )
 
-                _rootFindingState.update { 
+                // Compute the stopping reason
+                val lastError = if (method in listOf("Bisection", "False Position")) {
+                    (step1 as List<com.numerical.analysis.solver.domain.BracketingStep>).lastOrNull()?.error ?: 0.0
+                } else {
+                    (step1 as List<com.numerical.analysis.solver.domain.OpenMethodsStep>).lastOrNull()?.error ?: 0.0
+                }
+                
+                val epsValStr = String.format(java.util.Locale.US, "%.5f", state.eps.toDoubleOrNull() ?: 1e-6)
+                val errValStr = String.format(java.util.Locale.US, "%.5f", lastError)
+                val isPercentage = state.toleranceMode == com.numerical.analysis.solver.ui.screens.state.ToleranceMode.PERCENTAGE
+                
+                val reason = if (conv) {
+                    if (isPercentage) "|ε_a| % ($errValStr) ≤ ε_s % ($epsValStr) → Target Reached"
+                    else              "|x_new - x_old| ($errValStr) ≤ ε ($epsValStr) → Target Reached"
+                } else {
+                    "Max Iterations (${step1.size}) Reached"
+                }
+
+                _rootFindingState.update {
                     if (method in listOf("Bisection", "False Position")) {
                         @Suppress("UNCHECKED_CAST")
-                        val finalized = it.copy(bracketingResults = step1 as List<com.numerical.analysis.solver.domain.BracketingStep>, isConverged = conv, rootResult = res, isLoading = false)
+                        val finalized = it.copy(
+                            bracketingResults = step1 as List<com.numerical.analysis.solver.domain.BracketingStep>,
+                            isConverged = conv, rootResult = res, stoppingReason = reason, isLoading = false
+                        )
                         if (conv) saveHistory(resultEntry)
                         finalized
                     } else {
                         @Suppress("UNCHECKED_CAST")
-                        val finalized = it.copy(openMethodsResults = step1 as List<com.numerical.analysis.solver.domain.OpenMethodsStep>, isConverged = conv, rootResult = res, isLoading = false) 
+                        val finalized = it.copy(
+                            openMethodsResults = step1 as List<com.numerical.analysis.solver.domain.OpenMethodsStep>,
+                            isConverged = conv, rootResult = res, stoppingReason = reason, isLoading = false
+                        )
                         if (conv) saveHistory(resultEntry)
                         finalized
                     }
@@ -208,16 +253,10 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
     fun updateLinearSystemInput(matrixSize: Int? = null, method: String? = null) {
         _linearSystemState.update {
             val newSize = matrixSize ?: it.matrixSize
-            val newA = if (matrixSize != null) Array(newSize) { DoubleArray(newSize) } else it.matrixA
-            val newB = if (matrixSize != null) DoubleArray(newSize) else it.vectorB
-            it.copy(
-                matrixSize = newSize,
-                matrixA = newA,
-                vectorB = newB,
-                method = method ?: it.method,
-                errorMessage = null,
-                result = null
-            )
+            val newA    = if (matrixSize != null) Array(newSize) { DoubleArray(newSize) } else it.matrixA
+            val newB    = if (matrixSize != null) DoubleArray(newSize) else it.vectorB
+            it.copy(matrixSize = newSize, matrixA = newA, vectorB = newB,
+                    method = method ?: it.method, errorMessage = null, result = null)
         }
     }
 
@@ -240,23 +279,28 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                 val state = _linearSystemState.value
                 val result = withContext(Dispatchers.Default) {
                     when (state.method) {
-                        "gauss" -> linearAlgebraMethods.gaussElimination(state.matrixA, state.vectorB)
-                        "lu" -> linearAlgebraMethods.luDecomposition(state.matrixA, state.vectorB)
-                        "cramer" -> linearAlgebraMethods.cramersRule(state.matrixA, state.vectorB)
+                        "gauss"        -> linearAlgebraMethods.gaussElimination(state.matrixA, state.vectorB)
+                        "lu"           -> linearAlgebraMethods.luDecomposition(state.matrixA, state.vectorB)
+                        "cramer"       -> linearAlgebraMethods.cramersRule(state.matrixA, state.vectorB)
                         "gauss-jordan" -> linearAlgebraMethods.gaussJordan(state.matrixA, state.vectorB)
-                        else -> linearAlgebraMethods.gaussElimination(state.matrixA, state.vectorB)
+                        else           -> linearAlgebraMethods.gaussElimination(state.matrixA, state.vectorB)
                     }
                 }
-                _linearSystemState.update { it.copy(result = result, isLoading = false, errorMessage = if (result.isSuccessful) null else result.errorMessage) }
-                
+                _linearSystemState.update {
+                    it.copy(result = result, isLoading = false,
+                            errorMessage = if (result.isSuccessful) null else result.errorMessage)
+                }
                 if (result.isSuccessful) {
-                    val resultString = result.solution.mapIndexed { idx, v -> "x${idx + 1}=${String.format(Locale.US, "%.2f", v)}" }.joinToString(", ")
+                    val resultString = result.solution
+                        .mapIndexed { idx, v -> "x${idx + 1}=${String.format(Locale.US, "%.2f", v)}" }
+                        .joinToString(", ")
                     saveHistory(HistoryEntry(
-                        title = state.method.replaceFirstChar { it.uppercase() },
-                        subtitle = "${state.matrixA.size}x${state.matrixA.size} system",
-                        result = resultString,
-                        timestamp = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(Date()),
-                        accentColor = Color(0xFF1586EF)
+                        title       = state.method.replaceFirstChar { it.uppercase() },
+                        subtitle    = "${state.matrixA.size}x${state.matrixA.size} system",
+                        result      = resultString,
+                        timestamp   = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(Date()),
+                        accentColor = Color(0xFF1586EF),
+                        methodType  = state.method
                     ))
                 }
             } catch (e: Exception) {
@@ -265,14 +309,20 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun updateOptimizationInput(equation: String? = null, xl: String? = null, xu: String? = null, eps: String? = null, isMax: Boolean? = null) {
+    fun updateOptimizationInput(
+        equation: String? = null,
+        xl: String? = null,
+        xu: String? = null,
+        eps: String? = null,
+        isMax: Boolean? = null
+    ) {
         _optimizationState.update {
             it.copy(
-                equation = equation ?: it.equation,
-                xl = xl ?: it.xl,
-                xu = xu ?: it.xu,
-                eps = eps ?: it.eps,
-                isMax = isMax ?: it.isMax,
+                equation     = equation ?: it.equation,
+                xl           = xl       ?: it.xl,
+                xu           = xu       ?: it.xu,
+                eps          = eps      ?: it.eps,
+                isMax        = isMax    ?: it.isMax,
                 errorMessage = null
             )
         }
@@ -283,12 +333,11 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
             _optimizationState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val state = _optimizationState.value
-                val eps = state.eps.toDoubleOrNull() ?: 1e-6
-                val xl = state.xl.toDouble()
-                val xu = state.xu.toDouble()
-                val f = mathParser.parseFunction(state.equation)
-
                 val results = withContext(Dispatchers.Default) {
+                    val eps     = state.eps.toDoubleOrNull() ?: 1e-6
+                    val xl      = state.xl.toDouble()
+                    val xu      = state.xu.toDouble()
+                    val f       = mathParser.parseFunction(state.equation)
                     optimizationMethods.goldenSectionPoint(xl, xu, eps, state.isMax, f)
                 }
 
@@ -298,13 +347,18 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                 _optimizationState.update {
                     it.copy(steps = results, resultOpt = resOpt, isConverged = true, isLoading = false)
                 }
-                
+
                 saveHistory(HistoryEntry(
-                    title = "Golden Section Search",
-                    subtitle = "${if(state.isMax) "Max" else "Min"} of f(x) = ${state.equation}",
-                    result = "x ≈ ${String.format(Locale.US, "%.5f", resOpt)}",
-                    timestamp = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(Date()),
-                    accentColor = Color(0xFFF59E0B)
+                    title       = "Golden Section Search",
+                    subtitle    = "${if (state.isMax) "Max" else "Min"} of f(x) = ${state.equation}",
+                    result      = "x ≈ ${String.format(Locale.US, "%.5f", resOpt)}",
+                    timestamp   = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(Date()),
+                    accentColor = Color(0xFFF59E0B),
+                    equation    = state.equation,
+                    xl          = state.xl,
+                    xu          = state.xu,
+                    eps         = state.eps,
+                    methodType  = "golden_section"
                 ))
 
             } catch (e: Exception) {

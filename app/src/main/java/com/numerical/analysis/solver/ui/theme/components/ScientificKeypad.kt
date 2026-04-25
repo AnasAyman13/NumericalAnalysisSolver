@@ -87,6 +87,7 @@ enum class KeypadKey(
     // Row 6 — 0  .  [Hide]
     NUM_0("0", "0"),
     DECIMAL(".", "."),
+    ARROW_RIGHT("→", ""),
     HIDE("", "")
 }
 
@@ -111,6 +112,7 @@ private fun classifyKey(key: KeypadKey): KeyType = when (key) {
 
     KeypadKey.CLEAR -> KeyType.CONTROL_CLEAR
     KeypadKey.BACKSPACE -> KeyType.CONTROL_BACK
+    KeypadKey.ARROW_RIGHT -> KeyType.OPERATOR
     KeypadKey.HIDE -> KeyType.CONTROL_HIDE
 }
 
@@ -129,6 +131,12 @@ fun handleKeypadInput(
         KeypadKey.HIDE -> current
 
         KeypadKey.CLEAR -> TextFieldValue("")
+
+        KeypadKey.ARROW_RIGHT -> {
+            if (cursor < text.length) {
+                current.copy(selection = androidx.compose.ui.text.TextRange(cursor + 1))
+            } else current
+        }
 
         KeypadKey.BACKSPACE -> {
             if (cursor > 0) {
@@ -238,11 +246,12 @@ fun ScientificKeypad(
                     Btn(KeypadKey.CLEAR, onKey, Modifier.weight(1f))
                 }
 
-                // Row 6 — 0 (wide)  .  [Hide]
+                // Row 6 — 0 (wide)  .  [→] [Hide]
                 KeyRow {
                     Btn(KeypadKey.NUM_0, onKey, Modifier.weight(2f))
                     Btn(KeypadKey.DECIMAL, onKey, Modifier.weight(1f))
-                    Btn(KeypadKey.HIDE, onKey, Modifier.weight(2f))
+                    Btn(KeypadKey.ARROW_RIGHT, onKey, Modifier.weight(1f))
+                    Btn(KeypadKey.HIDE, onKey, Modifier.weight(1f))
                 }
             }
         }

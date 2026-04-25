@@ -20,6 +20,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalTextInputService
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -143,29 +144,34 @@ fun GoldenSectionScreen(
                     }
                 }
 
-                OutlinedTextField(
-                    value = equationValue,
-                    onValueChange = { equationValue = it; viewModel.updateOptimizationInput(equation = it.text) },
-                    label = { Text("Function f(x)", color = Slate500) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { fs ->
-                            if (fs.isFocused) {
-                                keyboardController?.hide()
-                                activeField = OptActiveField.EQUATION
-                            }
-                        },
-                    shape = RoundedCornerShape(12.dp),
-                    textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 15.sp, color = Slate900),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryColor,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.None)
-                )
+                // Setting LocalTextInputService to null means the OS has no IME session
+                // to attach to — the system keyboard cannot appear even on double-tap.
+                CompositionLocalProvider(LocalTextInputService provides null) {
+                    OutlinedTextField(
+                        value = equationValue,
+                        onValueChange = { equationValue = it; viewModel.updateOptimizationInput(equation = it.text) },
+                        label = { Text("Function f(x)", color = Slate500) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { fs ->
+                                if (fs.isFocused) {
+                                    keyboardController?.hide()  // secondary safety net
+                                    activeField = OptActiveField.EQUATION
+                                }
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 15.sp, color = Slate900),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryColor,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        singleLine  = true,
+                        readOnly    = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.None)
+                    )
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     OptNumericField(
@@ -259,22 +265,26 @@ private fun OptNumericField(
     onFocusGained: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label, color = Slate500) },
-        modifier = modifier.onFocusChanged { fs ->
-            if (fs.isFocused) onFocusGained()
-        },
-        shape = RoundedCornerShape(12.dp),
-        textStyle = TextStyle(fontFamily = FontFamily.Monospace, color = Slate900),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = PrimaryColor,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline
-        ),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.None)
-    )
+    // Null IME service — same approach as the root-finding fields.
+    CompositionLocalProvider(LocalTextInputService provides null) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label, color = Slate500) },
+            modifier = modifier.onFocusChanged { fs ->
+                if (fs.isFocused) onFocusGained()
+            },
+            shape = RoundedCornerShape(12.dp),
+            textStyle = TextStyle(fontFamily = FontFamily.Monospace, color = Slate900),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryColor,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            ),
+            singleLine = true,
+            readOnly   = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.None)
+        )
+    }
 }
 
 @Composable

@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.numerical.analysis.solver.data.HistoryEntry
+import com.numerical.analysis.solver.ui.theme.components.MathBackground
 import com.numerical.analysis.solver.ui.theme.screens.home.FloatingNavBar
 import com.numerical.analysis.solver.ui.theme.screens.home.PrimaryBlue
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
@@ -58,15 +59,20 @@ fun HistoryScreen(
         containerColor = bgColor,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
+            MathBackground()
 
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
                     .padding(horizontal = 24.dp),
-                contentPadding = PaddingValues(top = 24.dp, bottom = 120.dp)
+                contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp) // Adjusted top padding since Spacer adds safe area
             ) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                
                 // Page title
                 item {
                     Text(
@@ -235,11 +241,36 @@ fun HistoryDetailScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                    DetailRow(label = "Method", value = e.title, accent = e.accentColor)
+                    DetailRow(label = "Method",   value = e.title,     accent = e.accentColor)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    DetailRow(label = "Input", value = e.subtitle, accent = e.accentColor)
+                    DetailRow(label = "Equation", value = if (e.equation.isNotBlank()) "f(x) = ${e.equation}" else e.subtitle, accent = e.accentColor)
+
+                    // Only show bound / initial-guess rows if the data was stored
+                    if (e.xl.isNotBlank() || e.xu.isNotBlank()) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                            if (e.xl.isNotBlank()) DetailRow(label = "x_l (Lower)", value = e.xl, accent = e.accentColor)
+                            if (e.xu.isNotBlank()) DetailRow(label = "x_u (Upper)", value = e.xu, accent = e.accentColor)
+                        }
+                    }
+                    if (e.xi.isNotBlank()) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                            DetailRow(label = "x₀ (Initial)", value = e.xi, accent = e.accentColor)
+                            if (e.xMinus1.isNotBlank())
+                                DetailRow(label = "x(i−1)", value = e.xMinus1, accent = e.accentColor)
+                        }
+                    }
+                    if (e.eps.isNotBlank()) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                            DetailRow(label = "Tolerance", value = e.eps, accent = e.accentColor)
+                            DetailRow(label = "Max Iters", value = e.maxIterations, accent = e.accentColor)
+                        }
+                    }
+
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     DetailRow(label = "Result", value = e.result, accent = e.accentColor, highlight = true)
                 }

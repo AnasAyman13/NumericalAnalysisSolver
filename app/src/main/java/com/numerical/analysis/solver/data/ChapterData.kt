@@ -19,22 +19,22 @@ fun getChaptersList(): List<ChapterData> {
     return listOf(
         ChapterData(
             title = "Chapter 1: Root Finding",
-            description = "Methods for finding roots of functions.",
-            tags = listOf("Bisection", "Newton-Raphson", "Secant"),
-            imageRes = R.drawable.img_chapter1, 
+            description = "Find the roots of non-linear equations using five classical numerical methods.",
+            tags = listOf("Bisection", "False Position", "Newton", "Fixed Point", "Secant"),
+            imageRes = R.drawable.img_chapter1,
             icon = Icons.Outlined.GridOn
         ),
         ChapterData(
             title = "Chapter 2: Linear Systems",
-            description = "Solving systems of equations.",
-            tags = listOf("Gaussian", "LU", "Cramer"),
+            description = "Solve systems of linear equations using direct algebraic decomposition methods.",
+            tags = listOf("Gauss Elimination", "LU Decomposition", "Cramer's Rule", "Gauss-Jordan"),
             imageRes = R.drawable.img_chapter2,
             icon = Icons.Outlined.GridOn
         ),
         ChapterData(
-            title = "Chapter 3: Golden Section Search",
-            description = "Find the max/min of a single-variable function.",
-            tags = listOf("Optimization", "Golden Ratio"),
+            title = "Chapter 3: Optimization",
+            description = "Find the maximum or minimum of a single-variable function using the golden ratio.",
+            tags = listOf("Golden Section", "Max / Min"),
             imageRes = null,
             icon = Icons.Outlined.Dataset,
             isBonus = false

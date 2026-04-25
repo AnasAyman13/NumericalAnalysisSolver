@@ -1,143 +1,147 @@
 package com.numerical.analysis.solver.domain
 
+import com.numerical.analysis.solver.ui.screens.state.ToleranceMode
 import kotlin.math.abs
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 class RootFindingMethods {
 
+    private fun round5(value: Double): Double {
+        if (value.isNaN() || value.isInfinite()) return value
+        return Math.round(value * 100000.0) / 100000.0
+    }
+
     // =========================================================
     // BISECTION METHOD
-    // =========================================================
-    // The idea: the root lies between lowBound and highBound.
-    // We cut the interval in half every iteration.
-    // We keep the half that still contains the sign change.
     // =========================================================
     fun bisection(
         lowerBound: Double,
         upperBound: Double,
         eps: Double,
-        f: (Double) -> Double
-    ): List<BracketingStep> {
-
-        // This list will hold the data for every row of the table
-        val steps = mutableListOf<BracketingStep>()
-
-        var lowBound = lowerBound    // xl  — left bracket
-        var highBound = upperBound   // xu  — right bracket
-        var midPoint = 0.0           // xr  — midpoint (our estimate of the root)
-        var midPointOld = 0.0        // previous midpoint — needed to calculate error
-        var error = 0.0              // approximate relative error in %
-        var iter = 0                 // iteration counter
-
-        // Step 1: Check that a sign change exists in the interval.
-        // If f(xl) and f(xu) have the same sign, no root is guaranteed.
-        if (f(lowBound) * f(highBound) >= 0) {
-            throw Exception("f(xl) and f(xu) must have opposite signs.")
-        }
-
-        // Step 2: Main loop — keep iterating until the error is small enough
-        while (true) {
-
-            // Step 3: Save the previous midpoint so we can calculate error later
-            midPointOld = midPoint
-
-            // Step 4: Calculate the new midpoint — the core bisection formula
-            midPoint = (lowBound + highBound) / 2.0
-
-            // Step 5: Calculate the approximate relative error (skip iteration 0)
-            // Formula: |( xr_new - xr_old ) / xr_new| * 100
-            if (iter != 0) {
-                error = abs((midPoint - midPointOld) / midPoint) * 100.0
-            }
-
-            // Step 6: Save this iteration's data as one row in the results table
-            steps.add(
-                BracketingStep(
-                    iter    = iter,
-                    xl      = lowBound,
-                    fXl     = f(lowBound),
-                    xu      = highBound,
-                    fXu     = f(highBound),
-                    xr      = midPoint,
-                    fXr     = f(midPoint),
-                    error   = if (iter == 0) 0.0 else error
-                )
-            )
-
-            // Step 7: Stop if the error is within tolerance (and it's not the first iteration)
-            if (error <= eps && iter != 0) break
-
-            // Step 8: Decide which half of the interval to keep.
-            // If f(xl) * f(xr) > 0, the root is in the RIGHT half → move xl to xr
-            // Otherwise the root is in the LEFT half  → move xu to xr
-            if (f(lowBound) * f(midPoint) > 0) {
-                lowBound = midPoint   // root is in [xr, xu]
-            } else {
-                highBound = midPoint  // root is in [xl, xr]
-            }
-
-            iter++
-            if (iter > 100) break // safety limit
-        }
-
-        return steps
-    }
-
-    // =========================================================
-    // FALSE POSITION METHOD
-    // =========================================================
-    fun falsePosition(
-        lowerBound: Double,
-        upperBound: Double,
-        eps: Double,
+        maxIter: Int = 100,
+        mode: ToleranceMode,
         f: (Double) -> Double
     ): List<BracketingStep> {
         val steps = mutableListOf<BracketingStep>()
-        var lowBound = lowerBound
+        var lowBound  = lowerBound
         var highBound = upperBound
-        var midPoint = 0.0
+        var midPoint  = 0.0
         var midPointOld = 0.0
-        var error = 0.0
-        var iter = 0
+        var error     = 0.0
+        var iter      = 1
 
         if (f(lowBound) * f(highBound) >= 0) {
             throw Exception("f(xl) and f(xu) must have opposite signs.")
         }
 
-        while (true) {
+        while (iter <= maxIter) {
             midPointOld = midPoint
+            midPoint = (lowBound + highBound) / 2.0
+            midPoint = round5(midPoint)
 
-            // False Position formula — uses the slope between the two bracket points
-            midPoint = highBound - (f(highBound) * (lowBound - highBound)) / (f(lowBound) - f(highBound))
-
-            if (iter != 0) {
-                error = abs((midPoint - midPointOld) / midPoint) * 100.0
+            if (iter > 1) {
+                error = if (mode == ToleranceMode.ABSOLUTE) {
+                    abs(midPoint - midPointOld)
+                } else {
+                    if (midPoint == 0.0) 0.0 else abs((midPoint - midPointOld) / midPoint) * 100.0
+                }
+                error = round5(error)
             }
+
+            val fXl = round5(f(lowBound))
+            val fXu = round5(f(highBound))
+            val fXr = round5(f(midPoint))
 
             steps.add(
                 BracketingStep(
                     iter  = iter,
                     xl    = lowBound,
-                    fXl   = f(lowBound),
+                    fXl   = fXl,
                     xu    = highBound,
-                    fXu   = f(highBound),
+                    fXu   = fXu,
                     xr    = midPoint,
-                    fXr   = f(midPoint),
-                    error = if (iter == 0) 0.0 else error
+                    fXr   = fXr,
+                    error = if (iter == 1) 0.0 else error
                 )
             )
 
-            if (error <= eps && iter != 0) break
+            if (error <= eps && iter > 1) break
 
-            if (f(lowBound) * f(midPoint) > 0) {
+            if (fXl * fXr > 0) {
                 lowBound = midPoint
             } else {
                 highBound = midPoint
             }
 
             iter++
-            if (iter > 100) throw Exception("Failed to converge within 100 iterations")
+        }
+        return steps
+    }
+
+    fun falsePosition(
+        lowerBound: Double,
+        upperBound: Double,
+        eps: Double,
+        maxIter: Int = 100,
+        mode: ToleranceMode,
+        f: (Double) -> Double
+    ): List<BracketingStep> {
+        val steps = mutableListOf<BracketingStep>()
+        var lowBound  = lowerBound
+        var highBound = upperBound
+        var xr        = 0.0
+        var xrOld     = 0.0
+        var error     = 0.0
+        var iter      = 1
+
+        if (f(lowBound) * f(highBound) >= 0) {
+            throw Exception("f(xl) and f(xu) must have opposite signs.")
+        }
+
+        while (iter <= maxIter) {
+            xrOld = xr
+
+            val fXl = round5(f(lowBound))
+            val fXu = round5(f(highBound))
+
+            val denom = fXl - fXu
+            if (denom == 0.0) throw Exception("f(xl) equals f(xu). Method failed.")
+
+            xr = highBound - (fXu * (lowBound - highBound)) / denom
+            xr = round5(xr)
+
+            val fXr = round5(f(xr))
+
+            if (iter > 1) {
+                error = if (mode == ToleranceMode.ABSOLUTE) {
+                    abs(xr - xrOld)
+                } else {
+                    if (xr == 0.0) 0.0 else abs((xr - xrOld) / xr) * 100.0
+                }
+                error = round5(error)
+            }
+
+            steps.add(
+                BracketingStep(
+                    iter  = iter,
+                    xl    = lowBound,
+                    fXl   = fXl,
+                    xu    = highBound,
+                    fXu   = fXu,
+                    xr    = xr,
+                    fXr   = fXr,
+                    error = if (iter == 1) 0.0 else error
+                )
+            )
+
+            if (error <= eps && iter > 1) break
+
+            if (fXl * fXr > 0) {
+                lowBound = xr
+            } else {
+                highBound = xr
+            }
+
+            iter++
         }
 
         return steps
@@ -149,6 +153,8 @@ class RootFindingMethods {
     fun fixedPoint(
         x0: Double,
         eps: Double,
+        maxIter: Int = 100,
+        mode: ToleranceMode,
         g: (Double) -> Double
     ): List<OpenMethodsStep> {
         val steps = mutableListOf<OpenMethodsStep>()
@@ -157,12 +163,17 @@ class RootFindingMethods {
         var error = 0.0
         var iter = 0
 
-        while (true) {
-            // Apply the fixed-point iteration: xi+1 = g(xi)
+        while (iter <= maxIter) {
             xiPlus1 = g(xi)
+            xiPlus1 = round5(xiPlus1)
 
             if (iter != 0) {
-                error = abs((xiPlus1 - xi) / xiPlus1) * 100.0
+                error = if (mode == ToleranceMode.ABSOLUTE) {
+                    abs(xiPlus1 - xi)
+                } else {
+                    if (xiPlus1 == 0.0) 0.0 else abs((xiPlus1 - xi) / xiPlus1) * 100.0
+                }
+                error = round5(error)
             }
 
             steps.add(OpenMethodsStep(iter, xi, xiPlus1, 0.0, if (iter == 0) 0.0 else error))
@@ -173,7 +184,6 @@ class RootFindingMethods {
 
             xi = xiPlus1
             iter++
-            if (iter > 100) throw Exception("Failed to converge within 100 iterations")
         }
 
         return steps
@@ -185,7 +195,8 @@ class RootFindingMethods {
     fun newton(
         x0: Double,
         eps: Double,
-        maxIter: Int = 50,
+        maxIter: Int = 100,
+        mode: ToleranceMode,
         f: (Double) -> Double,
         fDash: (Double) -> Double
     ): List<OpenMethodsStep> {
@@ -195,18 +206,25 @@ class RootFindingMethods {
         var error = 0.0
         var iter = 0
 
-        while (true) {
-            val derivative = fDash(xi)
+        while (iter <= maxIter) {
+            val derivative = round5(fDash(xi))
             if (derivative == 0.0) throw Exception("Derivative became zero. Method failed.")
 
-            // Newton formula: xi+1 = xi - f(xi) / f'(xi)
-            xiPlus1 = xi - (f(xi) / derivative)
+            val fXi = round5(f(xi))
+
+            xiPlus1 = xi - (fXi / derivative)
+            xiPlus1 = round5(xiPlus1)
 
             if (iter != 0) {
-                error = abs((xiPlus1 - xi) / xiPlus1) * 100.0
+                error = if (mode == ToleranceMode.ABSOLUTE) {
+                    abs(xiPlus1 - xi)
+                } else {
+                    if (xiPlus1 == 0.0) 0.0 else abs((xiPlus1 - xi) / xiPlus1) * 100.0
+                }
+                error = round5(error)
             }
 
-            steps.add(OpenMethodsStep(iter, xi, xiPlus1, f(xi), if (iter == 0) 0.0 else error))
+            steps.add(OpenMethodsStep(iter, xi, xiPlus1, fXi, if (iter == 0) 0.0 else error))
 
             if (error <= eps && iter != 0) break
 
@@ -214,7 +232,6 @@ class RootFindingMethods {
 
             xi = xiPlus1
             iter++
-            if (iter > maxIter) throw Exception("Failed to converge within $maxIter iterations")
         }
 
         return steps
@@ -227,6 +244,8 @@ class RootFindingMethods {
         xMinus1: Double,
         x0: Double,
         eps: Double,
+        maxIter: Int = 100,
+        mode: ToleranceMode,
         f: (Double) -> Double
     ): List<OpenMethodsStep> {
         val steps = mutableListOf<OpenMethodsStep>()
@@ -235,17 +254,26 @@ class RootFindingMethods {
         var error = 0.0
         var iter = 0
 
-        while (true) {
+        while (iter <= maxIter) {
             if (iter != 0) {
-                error = abs((xi - xiMinus1) / xi) * 100.0
+                error = if (mode == ToleranceMode.ABSOLUTE) {
+                    abs(xi - xiMinus1)
+                } else {
+                    if (xi == 0.0) 0.0 else abs((xi - xiMinus1) / xi) * 100.0
+                }
+                error = round5(error)
             }
+            
+            val fXiMinus1 = round5(f(xiMinus1))
+            val fXi = round5(f(xi))
 
-            val denominator = f(xiMinus1) - f(xi)
+            val denominator = fXiMinus1 - fXi
             if (denominator == 0.0) throw Exception("Denominator became zero. Method failed.")
 
-            val xiNext = xi - ((f(xi) * (xiMinus1 - xi)) / denominator)
+            var xiNext = xi - ((fXi * (xiMinus1 - xi)) / denominator)
+            xiNext = round5(xiNext)
 
-            steps.add(OpenMethodsStep(iter, xiMinus1, xi, f(xi), if (iter == 0) 0.0 else error))
+            steps.add(OpenMethodsStep(iter, xiMinus1, xi, fXi, if (iter == 0) 0.0 else error))
 
             if (error <= eps && iter != 0) break
 
@@ -254,7 +282,6 @@ class RootFindingMethods {
             xiMinus1 = xi
             xi = xiNext
             iter++
-            if (iter > 100) throw Exception("Failed to converge within 100 iterations")
         }
 
         return steps

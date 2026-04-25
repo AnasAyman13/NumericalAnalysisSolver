@@ -60,7 +60,7 @@ import java.util.Locale
 // ─────────────────────────────────────────────────────────────────────────────
 private val COL_ITER = 42.dp
 private val COL_NUM  = 100.dp
-private val COL_ERR  = 84.dp
+private val COL_ERR  = 100.dp
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
@@ -144,7 +144,8 @@ fun RootFindingResultsScreen(
                     finalFx         = if (isBracketing)
                                           state.bracketingResults.lastOrNull()?.fXr ?: 0.0
                                       else
-                                          state.openMethodsResults.lastOrNull()?.fXi ?: 0.0
+                                          state.openMethodsResults.lastOrNull()?.fXi ?: 0.0,
+                    stoppingReason  = state.stoppingReason
                 )
             }
 
@@ -213,7 +214,8 @@ fun RootFindingResultsScreen(
                             .fillMaxWidth()
                             .horizontalScroll(horizontalScrollState) // same state = synchronized
                             .background(
-                                if (index % 2 == 0) MaterialTheme.colorScheme.surface
+                                if (state.isConverged && index == state.bracketingResults.lastIndex) Color(0xFFD1FAE5)
+                                else if (index % 2 == 0) MaterialTheme.colorScheme.surface
                                 else Slate50.copy(alpha = 0.55f)
                             )
                             .border(0.5.dp, Slate100)
@@ -228,9 +230,12 @@ fun RootFindingResultsScreen(
                         DataCell(text = fmt(step.xr),   width = COL_NUM, color = PrimaryColor, bold = true)
                         DataCell(text = fmt(step.fXr),  width = COL_NUM, color = fColor(step.fXr))
                         DataCell(
-                            text  = if (step.iter == 0) "—" else String.format(Locale.US, "%.5f", step.error),
+                            text  = if (step.iter == 1) "—" else {
+                                val errStr = String.format(Locale.US, "%.5f", step.error)
+                                if (state.isConverged && index == state.bracketingResults.lastIndex) "$errStr ✓" else errStr
+                            },
                             width = COL_ERR,
-                            color = errColor(step.error)
+                            color = if (state.isConverged && index == state.bracketingResults.lastIndex) Color(0xFF059669) else errColor(step.error)
                         )
                     }
                 }
@@ -240,7 +245,8 @@ fun RootFindingResultsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                if (index % 2 == 0) MaterialTheme.colorScheme.surface
+                                if (state.isConverged && index == state.openMethodsResults.lastIndex) Color(0xFFD1FAE5)
+                                else if (index % 2 == 0) MaterialTheme.colorScheme.surface
                                 else Slate50.copy(alpha = 0.55f)
                             )
                             .border(0.5.dp, Slate100)
@@ -252,12 +258,16 @@ fun RootFindingResultsScreen(
                         Text(fmt(step.xiPlus1),modifier = Modifier.weight(0.24f), textAlign = TextAlign.End,    fontSize = 12.sp, color = PrimaryColor,    fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace)
                         Text(fmt(step.fXi),    modifier = Modifier.weight(0.22f), textAlign = TextAlign.End,    fontSize = 12.sp, color = fColor(step.fXi),fontFamily = FontFamily.Monospace)
                         Text(
-                            text = if (step.iter == 0) "—" else String.format(Locale.US, "%.5f", step.error),
+                            text = if (step.iter == 0) "—" else {
+                                val errStr = String.format(Locale.US, "%.5f", step.error)
+                                if (state.isConverged && index == state.openMethodsResults.lastIndex) "$errStr ✓" else errStr
+                            },
                             modifier = Modifier.weight(0.20f),
                             textAlign = TextAlign.End,
                             fontSize = 12.sp,
-                            color = errColor(step.error),
-                            fontFamily = FontFamily.Monospace
+                            color = if (state.isConverged && index == state.openMethodsResults.lastIndex) Color(0xFF059669) else errColor(step.error),
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = if (state.isConverged && index == state.openMethodsResults.lastIndex) FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }
@@ -278,7 +288,8 @@ private fun SummaryCard(
     root: Double,
     isConverged: Boolean,
     iterationsCount: Int,
-    finalFx: Double
+    finalFx: Double,
+    stoppingReason: String?
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -326,11 +337,37 @@ private fun SummaryCard(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
                     Text("f(root)", fontSize = 12.sp, color = Slate500)
-                    Text(String.format(Locale.US, "%.5e", finalFx), fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = Slate900)
+                    Text(String.format(Locale.US, "%.5f", finalFx), fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = Slate900)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Total Iterations", fontSize = 12.sp, color = Slate500)
                     Text("$iterationsCount", fontSize = 13.sp, fontFamily = FontFamily.Monospace, color = Slate900)
+                }
+            }
+            
+            if (stoppingReason != null) {
+                Spacer(Modifier.height(14.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (isConverged) Color(0xFFECFDF5) else Color(0xFFFEF2F2), RoundedCornerShape(8.dp))
+                        .border(1.dp, if (isConverged) Color(0xFFA7F3D0) else Color(0xFFFECACA), RoundedCornerShape(8.dp))
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        if (isConverged) Icons.Filled.CheckCircle else Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = if (isConverged) Color(0xFF059669) else Color(0xFFDC2626),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stoppingReason,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isConverged) Color(0xFF059669) else Color(0xFFDC2626)
+                    )
                 }
             }
         }

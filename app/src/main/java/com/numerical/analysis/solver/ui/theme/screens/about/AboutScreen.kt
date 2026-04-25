@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.numerical.analysis.solver.ui.theme.components.MathBackground
 
 private val BackgroundLight @Composable get() = MaterialTheme.colorScheme.background
 private val PrimaryBlue @Composable get() = MaterialTheme.colorScheme.primary
@@ -38,20 +39,22 @@ private val Slate50 @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 fun AboutScreen(
     onNavigateBack: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundLight)
-    ) {
-        TopNavigationBar(onNavigateBack = onNavigateBack)
+    Scaffold(
+        containerColor = BackgroundLight,
+        topBar = { TopNavigationBar(onNavigateBack = onNavigateBack) }
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            MathBackground()
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+            Spacer(modifier = Modifier.height(24.dp))
             AppHeader()
             Spacer(modifier = Modifier.height(24.dp))
             CourseInformationCard()
@@ -62,6 +65,7 @@ fun AboutScreen(
             Spacer(modifier = Modifier.height(32.dp))
             Footer()
             Spacer(modifier = Modifier.height(24.dp))
+        }
         }
     }
 }

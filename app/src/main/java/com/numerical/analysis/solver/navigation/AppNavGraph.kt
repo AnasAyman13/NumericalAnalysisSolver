@@ -1,5 +1,11 @@
 package com.numerical.analysis.solver.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -20,10 +26,6 @@ import com.numerical.analysis.solver.ui.theme.screens.linearsystems.LinearSystem
 import com.numerical.analysis.solver.ui.theme.screens.optimization.GoldenSectionScreen
 import com.numerical.analysis.solver.ui.theme.screens.optimization.GoldenSectionResultsScreen
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Route Strings — keep them as simple constants so every screen refers to the
-//  same string and typos are caught at compile time.
-// ─────────────────────────────────────────────────────────────────────────────
 private const val SPLASH               = "splash"
 private const val HOME                 = "home"
 private const val HISTORY              = "history"
@@ -36,22 +38,71 @@ private const val LINEAR_RESULTS       = "linear_systems_results"
 private const val GOLDEN_SECTION       = "golden_section"
 private const val GOLDEN_RESULTS       = "golden_section_results"
 
+// Shared animation duration used on every transition
+private const val ANIM_MS = 320
+
 @Composable
 fun AppNavGraph(
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
-    val navController = rememberNavController()
-
-    // One shared ViewModel for the entire app — simple and easy to explain.
+    val navController    = rememberNavController()
     val solverViewModel: SolverViewModel = viewModel()
 
+    val getTabIndex = { route: String? ->
+        when (route) {
+            HOME -> 0
+            HISTORY -> 1
+            ABOUT -> 2
+            else -> 3
+        }
+    }
+
     NavHost(
-        navController = navController,
-        startDestination = SPLASH
+        navController    = navController,
+        startDestination = SPLASH,
+        enterTransition  = {
+            val initialIndex = getTabIndex(initialState.destination.route)
+            val targetIndex = getTabIndex(targetState.destination.route)
+            val direction = if (targetIndex >= initialIndex) {
+                AnimatedContentTransitionScope.SlideDirection.Left
+            } else {
+                AnimatedContentTransitionScope.SlideDirection.Right
+            }
+            slideIntoContainer(direction, animationSpec = tween(ANIM_MS)) + fadeIn(animationSpec = tween(ANIM_MS))
+        },
+        exitTransition   = {
+            val initialIndex = getTabIndex(initialState.destination.route)
+            val targetIndex = getTabIndex(targetState.destination.route)
+            val direction = if (targetIndex >= initialIndex) {
+                AnimatedContentTransitionScope.SlideDirection.Left
+            } else {
+                AnimatedContentTransitionScope.SlideDirection.Right
+            }
+            slideOutOfContainer(direction, animationSpec = tween(ANIM_MS)) + fadeOut(animationSpec = tween(ANIM_MS))
+        },
+        popEnterTransition = {
+            val initialIndex = getTabIndex(initialState.destination.route)
+            val targetIndex = getTabIndex(targetState.destination.route)
+            val direction = if (targetIndex >= initialIndex) {
+                AnimatedContentTransitionScope.SlideDirection.Left
+            } else {
+                AnimatedContentTransitionScope.SlideDirection.Right
+            }
+            slideIntoContainer(direction, animationSpec = tween(ANIM_MS)) + fadeIn(animationSpec = tween(ANIM_MS))
+        },
+        popExitTransition = {
+            val initialIndex = getTabIndex(initialState.destination.route)
+            val targetIndex = getTabIndex(targetState.destination.route)
+            val direction = if (targetIndex >= initialIndex) {
+                AnimatedContentTransitionScope.SlideDirection.Left
+            } else {
+                AnimatedContentTransitionScope.SlideDirection.Right
+            }
+            slideOutOfContainer(direction, animationSpec = tween(ANIM_MS)) + fadeOut(animationSpec = tween(ANIM_MS))
+        }
     ) {
 
-        // ── Splash ───────────────────────────────────────────────────────────
         composable(SPLASH) {
             SplashScreen(onAnimationFinished = {
                 navController.navigate(HOME) {
@@ -60,13 +111,12 @@ fun AppNavGraph(
             })
         }
 
-        // ── Home ─────────────────────────────────────────────────────────────
         composable(HOME) {
             HomeScreen(
-                currentRoute = HOME,
-                isDarkTheme = isDarkTheme,
+                currentRoute  = HOME,
+                isDarkTheme   = isDarkTheme,
                 onToggleTheme = onToggleTheme,
-                onNavigate = { route ->
+                onNavigate    = { route ->
                     if (route != HOME) {
                         navController.navigate(route) {
                             popUpTo(HOME) { saveState = true }
@@ -76,21 +126,21 @@ fun AppNavGraph(
                 },
                 onChapterClick = { chapterTitle ->
                     when {
-                        chapterTitle.contains("Root Finding",    ignoreCase = true) -> navController.navigate(ROOT_FINDING)
-                        chapterTitle.contains("Linear Systems",  ignoreCase = true) -> navController.navigate(LINEAR_SYSTEMS)
-                        chapterTitle.contains("Golden Section",  ignoreCase = true) -> navController.navigate(GOLDEN_SECTION)
+                        chapterTitle.contains("Root Finding",   ignoreCase = true) -> navController.navigate(ROOT_FINDING)
+                        chapterTitle.contains("Linear Systems", ignoreCase = true) -> navController.navigate(LINEAR_SYSTEMS)
+                        chapterTitle.contains("Optimization",  ignoreCase = true) -> navController.navigate(GOLDEN_SECTION)
+                        chapterTitle.contains("Golden",        ignoreCase = true) -> navController.navigate(GOLDEN_SECTION)
                     }
                 }
             )
         }
 
-        // ── History list ─────────────────────────────────────────────────────
         composable(HISTORY) {
             HistoryScreen(
                 isDarkTheme  = isDarkTheme,
                 viewModel    = solverViewModel,
                 currentRoute = HISTORY,
-                onNavigate = { route ->
+                onNavigate   = { route ->
                     if (route != HISTORY) {
                         navController.navigate(route) {
                             popUpTo(HOME) { saveState = true }
@@ -98,8 +148,6 @@ fun AppNavGraph(
                         }
                     }
                 },
-                // Step 1: store the tapped entry in the ViewModel
-                // Step 2: navigate to the detail screen
                 onEntryClick = { entry ->
                     solverViewModel.selectHistoryEntry(entry)
                     navController.navigate(HISTORY_DETAIL)
@@ -107,41 +155,33 @@ fun AppNavGraph(
             )
         }
 
-        // ── History detail ───────────────────────────────────────────────────
-        // Simple route — no arguments needed because the entry is in the ViewModel
         composable(HISTORY_DETAIL) {
             HistoryDetailScreen(
-                viewModel = solverViewModel,
-                onBack = { navController.popBackStack() },
+                viewModel     = solverViewModel,
+                onBack        = { navController.popBackStack() },
                 onRecalculate = { solverRoute ->
-                    // Pop back to the history list, then open the correct solver
                     navController.popBackStack(HISTORY, inclusive = false)
                     navController.navigate(solverRoute)
                 }
             )
         }
 
-        // ── About ────────────────────────────────────────────────────────────
         composable(ABOUT) {
-            AboutScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+            AboutScreen(onNavigateBack = { navController.popBackStack() })
         }
 
-        // ── Root Finding input ────────────────────────────────────────────────
         composable(ROOT_FINDING) {
             RootFindingScreen(
-                viewModel = solverViewModel,
-                onBack = { navController.popBackStack() },
+                viewModel       = solverViewModel,
+                onBack          = { navController.popBackStack() },
                 onSolveComplete = { method ->
                     navController.navigate("root_finding_results/$method")
                 }
             )
         }
 
-        // ── Root Finding results ──────────────────────────────────────────────
         composable(
-            route = ROOT_FINDING_RESULTS,
+            route     = ROOT_FINDING_RESULTS,
             arguments = listOf(navArgument("method") { type = NavType.StringType })
         ) { backStackEntry ->
             val method = backStackEntry.arguments?.getString("method") ?: "Bisection"
@@ -152,40 +192,30 @@ fun AppNavGraph(
             )
         }
 
-        // ── Linear Systems input ──────────────────────────────────────────────
         composable(LINEAR_SYSTEMS) {
             LinearSystemScreen(
-                viewModel = solverViewModel,
-                onBack    = { navController.popBackStack() },
-                onSolveComplete = {
-                    navController.navigate(LINEAR_RESULTS)
-                }
+                viewModel       = solverViewModel,
+                onBack          = { navController.popBackStack() },
+                onSolveComplete = { navController.navigate(LINEAR_RESULTS) }
             )
         }
 
-        // ── Linear Systems results ────────────────────────────────────────────
         composable(LINEAR_RESULTS) {
             LinearSystemResultsScreen(
                 viewModel        = solverViewModel,
                 onBack           = { navController.popBackStack() },
-                onNewCalculation = {
-                    navController.popBackStack(LINEAR_SYSTEMS, inclusive = false)
-                }
+                onNewCalculation = { navController.popBackStack(LINEAR_SYSTEMS, inclusive = false) }
             )
         }
 
-        // ── Golden Section input ──────────────────────────────────────────────
         composable(GOLDEN_SECTION) {
             GoldenSectionScreen(
-                viewModel = solverViewModel,
-                onBack    = { navController.popBackStack() },
-                onSolveComplete = {
-                    navController.navigate(GOLDEN_RESULTS)
-                }
+                viewModel       = solverViewModel,
+                onBack          = { navController.popBackStack() },
+                onSolveComplete = { navController.navigate(GOLDEN_RESULTS) }
             )
         }
 
-        // ── Golden Section results ────────────────────────────────────────────
         composable(GOLDEN_RESULTS) {
             GoldenSectionResultsScreen(
                 viewModel = solverViewModel,

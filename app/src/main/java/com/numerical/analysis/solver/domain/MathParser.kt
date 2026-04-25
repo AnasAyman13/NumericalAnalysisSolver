@@ -9,25 +9,19 @@ class MathParser {
      * into a Kotlin lambda function (Double) -> Double.
      */
     fun parseFunction(expression: String, variableName: String = "x"): (Double) -> Double {
-        val expr = ExpressionBuilder(expression)
+        // Translate visual superscripts into standard operators for the mathematical parser
+        val sanitizedExpression = expression
+            .replace("²", "^2")
+            .replace("ⁿ", "^")
+
+        val expr = ExpressionBuilder(sanitizedExpression)
             .variables(variableName)
             .build()
-        
+
         return { value ->
             expr.setVariable(variableName, value)
-            expr.evaluate()
-        }
-    }
-
-    /**
-     * Evaluates the derivative numerically using the central difference formula.
-     * f'(x) ≈ (f(x + h) - f(x - h)) / 2h
-     */
-    fun parseDerivative(expression: String, variableName: String = "x"): (Double) -> Double {
-        val f = parseFunction(expression, variableName)
-        val h = 1e-6 // Small step size
-        return { value ->
-            (f(value + h) - f(value - h)) / (2 * h)
+            val raw = expr.evaluate()
+            Math.round(raw * 100000.0) / 100000.0
         }
     }
 }
