@@ -126,14 +126,7 @@ fun RootFindingScreen(
         }
     }
 
-    // Navigate to results once the solver has finished
-    LaunchedEffect(state.isConverged, state.rootResult, state.isLoading) {
-        if (!state.isLoading && (state.isConverged || state.rootResult != null) && state.errorMessage == null) {
-            if (state.openMethodsResults.isNotEmpty() || state.bracketingResults.isNotEmpty()) {
-                onSolveComplete(selectedMethod)
-            }
-        }
-    }
+    // Navigation and results logic is now handled via ViewModel.navigationEvents in AppNavGraph
 
     LaunchedEffect(viewModel.selectedMethodIndex.value) {
         pagerState.scrollToPage(viewModel.selectedMethodIndex.value)
@@ -254,14 +247,15 @@ fun RootFindingScreen(
                     }
 
                     // ── Function f(x) card ──────────────────────────────────
-                    SectionCard(title = "Function f(x)", icon = Icons.Outlined.Functions) {
+                    val equationLabel = if (method == "Fixed Point") "Function g(x) (where x=g(x))" else "Function f(x)"
+                    SectionCard(title = equationLabel, icon = Icons.Outlined.Functions) {
                         KeypadTextField(
                             value         = equationValue,
                             onValueChange = { equationValue = it; viewModel.updateRootFindingInput(equation = it.text) },
                             isFocused     = activeField == ActiveField.EQUATION,
                             onFocusGained = { keyboardController?.hide(); activeField = ActiveField.EQUATION },
                             modifier      = Modifier.fillMaxWidth(),
-                            placeholder   = "e.g. x³ - 2x - 5"
+                            placeholder   = if (method == "Fixed Point") "e.g. (x² + 5)/2" else "e.g. x³ - 2x - 5"
                         )
                         Text(
                             "Tap a field → custom keypad appears",

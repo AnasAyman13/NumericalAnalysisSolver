@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import kotlinx.coroutines.flow.collect
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
 import com.numerical.analysis.solver.ui.screens.splash.SplashScreen
 import com.numerical.analysis.solver.ui.screens.about.AboutScreen
@@ -39,7 +40,7 @@ private const val GOLDEN_SECTION       = "golden_section"
 private const val GOLDEN_RESULTS       = "golden_section_results"
 
 // Shared animation duration used on every transition
-private const val ANIM_MS = 320
+private const val ANIM_MS = 250
 
 @Composable
 fun AppNavGraph(
@@ -55,6 +56,12 @@ fun AppNavGraph(
             HISTORY -> 1
             ABOUT -> 2
             else -> 3
+        }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        solverViewModel.navigationEvents.collect { route ->
+            navController.navigate(route)
         }
     }
 
@@ -173,7 +180,10 @@ fun AppNavGraph(
         composable(ROOT_FINDING) {
             RootFindingScreen(
                 viewModel       = solverViewModel,
-                onBack          = { navController.popBackStack() },
+                onBack          = { 
+                    solverViewModel.cancelCalculation()
+                    navController.popBackStack() 
+                },
                 onSolveComplete = { method ->
                     navController.navigate("root_finding_results/$method")
                 }
@@ -195,7 +205,10 @@ fun AppNavGraph(
         composable(LINEAR_SYSTEMS) {
             LinearSystemScreen(
                 viewModel       = solverViewModel,
-                onBack          = { navController.popBackStack() },
+                onBack          = { 
+                    solverViewModel.cancelCalculation()
+                    navController.popBackStack() 
+                },
                 onSolveComplete = { navController.navigate(LINEAR_RESULTS) }
             )
         }
@@ -211,7 +224,10 @@ fun AppNavGraph(
         composable(GOLDEN_SECTION) {
             GoldenSectionScreen(
                 viewModel       = solverViewModel,
-                onBack          = { navController.popBackStack() },
+                onBack          = { 
+                    solverViewModel.cancelCalculation()
+                    navController.popBackStack() 
+                },
                 onSolveComplete = { navController.navigate(GOLDEN_RESULTS) }
             )
         }

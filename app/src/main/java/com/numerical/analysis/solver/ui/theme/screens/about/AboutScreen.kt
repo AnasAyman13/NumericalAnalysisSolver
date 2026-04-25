@@ -303,8 +303,8 @@ private fun DevelopmentTeamSection() {
                 name = "Adham Sayed Kamel",
                 role = "Android Developer",
                 studentId = "110835",
-                avatarColor = Color(0xFFEEF2FF),
-                textColor = Color(0xFF4F46E5)
+                avatarColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                textColor = MaterialTheme.colorScheme.secondary
             )
 
             TeamMemberItem(
@@ -312,8 +312,8 @@ private fun DevelopmentTeamSection() {
                 name = "Ahmed Mohamed Alktatny",
                 role = "Android Developer",
                 studentId = "110970",
-                avatarColor = Color(0xFFECFDF5),
-                textColor = Color(0xFF059669)
+                avatarColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                textColor = MaterialTheme.colorScheme.tertiary
             )
         }
     }

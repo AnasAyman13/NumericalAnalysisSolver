@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import com.numerical.analysis.solver.domain.LinearAlgebraMethods
 import com.numerical.analysis.solver.domain.MathParser
 import com.numerical.analysis.solver.domain.OptimizationMethods
@@ -31,6 +33,10 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
     private val optimizationMethods  = OptimizationMethods()
     private val mathParser           = MathParser()
     private val historyRepository    = HistoryRepository(application)
+    private var calculationJob: kotlinx.coroutines.Job? = null
+
+    private val _navigationEvents = MutableSharedFlow<String>()
+    val navigationEvents = _navigationEvents.asSharedFlow()
 
     private val _history = MutableStateFlow<List<HistoryEntry>>(emptyList())
     val history: StateFlow<List<HistoryEntry>> = _history.asStateFlow()
@@ -40,6 +46,13 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
 
     fun selectHistoryEntry(entry: HistoryEntry) {
         _selectedHistoryEntry.value = entry
+    }
+
+    fun cancelCalculation() {
+        calculationJob?.cancel()
+        _rootFindingState.update { it.copy(isLoading = false) }
+        _linearSystemState.update { it.copy(isLoading = false) }
+        _optimizationState.update { it.copy(isLoading = false) }
     }
 
     // -------------------------------------------------------------------------
@@ -141,7 +154,8 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun solveRootPath(method: String) {
-        viewModelScope.launch {
+        calculationJob?.cancel()
+        calculationJob = viewModelScope.launch {
             _rootFindingState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val state = _rootFindingState.value
@@ -244,6 +258,7 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                         finalized
                     }
                 }
+                _navigationEvents.emit("root_finding_results/$method")
             } catch (e: Exception) {
                 _rootFindingState.update { it.copy(isLoading = false, errorMessage = e.message ?: "Invalid input") }
             }
@@ -273,7 +288,8 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun solveLinearSystem() {
-        viewModelScope.launch {
+        calculationJob?.cancel()
+        calculationJob = viewModelScope.launch {
             _linearSystemState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val state = _linearSystemState.value
@@ -291,6 +307,7 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                             errorMessage = if (result.isSuccessful) null else result.errorMessage)
                 }
                 if (result.isSuccessful) {
+                    _navigationEvents.emit("linear_systems_results")
                     val resultString = result.solution
                         .mapIndexed { idx, v -> "x${idx + 1}=${String.format(Locale.US, "%.2f", v)}" }
                         .joinToString(", ")
@@ -329,7 +346,8 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun solveOptimization() {
-        viewModelScope.launch {
+        calculationJob?.cancel()
+        calculationJob = viewModelScope.launch {
             _optimizationState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val state = _optimizationState.value
@@ -347,6 +365,8 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                 _optimizationState.update {
                     it.copy(steps = results, resultOpt = resOpt, isConverged = true, isLoading = false)
                 }
+
+                _navigationEvents.emit("golden_section_results")
 
                 saveHistory(HistoryEntry(
                     title       = "Golden Section Search",

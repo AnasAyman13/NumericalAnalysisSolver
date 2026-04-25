@@ -1,19 +1,15 @@
 package com.numerical.analysis.solver.domain
 
 import com.numerical.analysis.solver.ui.screens.state.ToleranceMode
+import kotlinx.coroutines.yield
 import kotlin.math.abs
 
 class RootFindingMethods {
 
-    private fun round5(value: Double): Double {
-        if (value.isNaN() || value.isInfinite()) return value
-        return Math.round(value * 100000.0) / 100000.0
-    }
-
     // =========================================================
     // BISECTION METHOD
     // =========================================================
-    fun bisection(
+    suspend fun bisection(
         lowerBound: Double,
         upperBound: Double,
         eps: Double,
@@ -30,26 +26,25 @@ class RootFindingMethods {
         var iter      = 1
 
         if (f(lowBound) * f(highBound) >= 0) {
-            throw Exception("f(xl) and f(xu) must have opposite signs.")
+            // throw Exception("f(xl) and f(xu) must have opposite signs.")
         }
 
         while (iter <= maxIter) {
+            yield() // Check for coroutine cancellation
             midPointOld = midPoint
             midPoint = (lowBound + highBound) / 2.0
-            midPoint = round5(midPoint)
 
             if (iter > 1) {
                 error = if (mode == ToleranceMode.ABSOLUTE) {
                     abs(midPoint - midPointOld)
                 } else {
-                    if (midPoint == 0.0) 0.0 else abs((midPoint - midPointOld) / midPoint) * 100.0
+                    if (abs(midPoint) < 1e-18) 0.0 else abs((midPoint - midPointOld) / midPoint) * 100.0
                 }
-                error = round5(error)
             }
 
-            val fXl = round5(f(lowBound))
-            val fXu = round5(f(highBound))
-            val fXr = round5(f(midPoint))
+            val fXl = f(lowBound)
+            val fXu = f(highBound)
+            val fXr = f(midPoint)
 
             steps.add(
                 BracketingStep(
@@ -65,6 +60,7 @@ class RootFindingMethods {
             )
 
             if (error <= eps && iter > 1) break
+            if (abs(fXr) < 1e-14) break
 
             if (fXl * fXr > 0) {
                 lowBound = midPoint
@@ -77,7 +73,7 @@ class RootFindingMethods {
         return steps
     }
 
-    fun falsePosition(
+    suspend fun falsePosition(
         lowerBound: Double,
         upperBound: Double,
         eps: Double,
@@ -94,30 +90,29 @@ class RootFindingMethods {
         var iter      = 1
 
         if (f(lowBound) * f(highBound) >= 0) {
-            throw Exception("f(xl) and f(xu) must have opposite signs.")
+            // throw Exception("f(xl) and f(xu) must have opposite signs.")
         }
 
         while (iter <= maxIter) {
+            yield()
             xrOld = xr
 
-            val fXl = round5(f(lowBound))
-            val fXu = round5(f(highBound))
+            val fXl = f(lowBound)
+            val fXu = f(highBound)
 
             val denom = fXl - fXu
-            if (denom == 0.0) throw Exception("f(xl) equals f(xu). Method failed.")
+            if (abs(denom) < 1e-20) throw Exception("f(xl) equals f(xu). Method failed.")
 
             xr = highBound - (fXu * (lowBound - highBound)) / denom
-            xr = round5(xr)
 
-            val fXr = round5(f(xr))
+            val fXr = f(xr)
 
             if (iter > 1) {
                 error = if (mode == ToleranceMode.ABSOLUTE) {
                     abs(xr - xrOld)
                 } else {
-                    if (xr == 0.0) 0.0 else abs((xr - xrOld) / xr) * 100.0
+                    if (abs(xr) < 1e-18) 0.0 else abs((xr - xrOld) / xr) * 100.0
                 }
-                error = round5(error)
             }
 
             steps.add(
@@ -134,6 +129,7 @@ class RootFindingMethods {
             )
 
             if (error <= eps && iter > 1) break
+            if (abs(fXr) < 1e-14) break
 
             if (fXl * fXr > 0) {
                 lowBound = xr
@@ -150,7 +146,7 @@ class RootFindingMethods {
     // =========================================================
     // FIXED POINT METHOD
     // =========================================================
-    fun fixedPoint(
+    suspend fun fixedPoint(
         x0: Double,
         eps: Double,
         maxIter: Int = 100,
@@ -164,23 +160,26 @@ class RootFindingMethods {
         var iter = 0
 
         while (iter <= maxIter) {
+            yield()
             xiPlus1 = g(xi)
-            xiPlus1 = round5(xiPlus1)
 
             if (iter != 0) {
                 error = if (mode == ToleranceMode.ABSOLUTE) {
                     abs(xiPlus1 - xi)
                 } else {
-                    if (xiPlus1 == 0.0) 0.0 else abs((xiPlus1 - xi) / xiPlus1) * 100.0
+                    if (abs(xiPlus1) < 1e-18) 0.0 else abs((xiPlus1 - xi) / xiPlus1) * 100.0
                 }
-                error = round5(error)
             }
 
             steps.add(OpenMethodsStep(iter, xi, xiPlus1, 0.0, if (iter == 0) 0.0 else error))
 
             if (error <= eps && iter != 0) break
+            if (abs(xiPlus1 - xi) < 1e-14) break
 
-            if (xiPlus1.isNaN() || xiPlus1.isInfinite()) throw Exception("Method diverged.")
+            if (xiPlus1.isNaN() || xiPlus1.isInfinite() || abs(xiPlus1) > 1e20) {
+                // Previously threw Exception; now continuing to allow user to see behavior as requested
+                break 
+            }
 
             xi = xiPlus1
             iter++
@@ -192,7 +191,7 @@ class RootFindingMethods {
     // =========================================================
     // NEWTON-RAPHSON METHOD
     // =========================================================
-    fun newton(
+    suspend fun newton(
         x0: Double,
         eps: Double,
         maxIter: Int = 100,
@@ -207,28 +206,28 @@ class RootFindingMethods {
         var iter = 0
 
         while (iter <= maxIter) {
-            val derivative = round5(fDash(xi))
-            if (derivative == 0.0) throw Exception("Derivative became zero. Method failed.")
+            yield()
+            val derivative = fDash(xi)
+            if (abs(derivative) < 1e-20) throw Exception("Derivative became zero. Method failed.")
 
-            val fXi = round5(f(xi))
+            val fXi = f(xi)
 
             xiPlus1 = xi - (fXi / derivative)
-            xiPlus1 = round5(xiPlus1)
 
             if (iter != 0) {
                 error = if (mode == ToleranceMode.ABSOLUTE) {
                     abs(xiPlus1 - xi)
                 } else {
-                    if (xiPlus1 == 0.0) 0.0 else abs((xiPlus1 - xi) / xiPlus1) * 100.0
+                    if (abs(xiPlus1) < 1e-18) 0.0 else abs((xiPlus1 - xi) / xiPlus1) * 100.0
                 }
-                error = round5(error)
             }
 
             steps.add(OpenMethodsStep(iter, xi, xiPlus1, fXi, if (iter == 0) 0.0 else error))
 
             if (error <= eps && iter != 0) break
+            if (abs(fXi) < 1e-14) break
 
-            if (xiPlus1.isNaN() || xiPlus1.isInfinite()) throw Exception("Method diverged.")
+            if (xiPlus1.isNaN() || xiPlus1.isInfinite() || abs(xiPlus1) > 1e20) break
 
             xi = xiPlus1
             iter++
@@ -240,7 +239,7 @@ class RootFindingMethods {
     // =========================================================
     // SECANT METHOD
     // =========================================================
-    fun secant(
+    suspend fun secant(
         xMinus1: Double,
         x0: Double,
         eps: Double,
@@ -255,29 +254,29 @@ class RootFindingMethods {
         var iter = 0
 
         while (iter <= maxIter) {
+            yield()
             if (iter != 0) {
                 error = if (mode == ToleranceMode.ABSOLUTE) {
                     abs(xi - xiMinus1)
                 } else {
-                    if (xi == 0.0) 0.0 else abs((xi - xiMinus1) / xi) * 100.0
+                    if (abs(xi) < 1e-18) 0.0 else abs((xi - xiMinus1) / xi) * 100.0
                 }
-                error = round5(error)
             }
             
-            val fXiMinus1 = round5(f(xiMinus1))
-            val fXi = round5(f(xi))
+            val fXiMinus1 = f(xiMinus1)
+            val fXi = f(xi)
 
             val denominator = fXiMinus1 - fXi
-            if (denominator == 0.0) throw Exception("Denominator became zero. Method failed.")
+            if (abs(denominator) < 1e-20) throw Exception("Denominator became zero. Method failed.")
 
             var xiNext = xi - ((fXi * (xiMinus1 - xi)) / denominator)
-            xiNext = round5(xiNext)
 
             steps.add(OpenMethodsStep(iter, xiMinus1, xi, fXi, if (iter == 0) 0.0 else error))
 
             if (error <= eps && iter != 0) break
+            if (abs(fXi) < 1e-14) break
 
-            if (xiNext.isNaN() || xiNext.isInfinite()) throw Exception("Method diverged.")
+            if (xiNext.isNaN() || xiNext.isInfinite() || abs(xiNext) > 1e20) break
 
             xiMinus1 = xi
             xi = xiNext
@@ -286,4 +285,4 @@ class RootFindingMethods {
 
         return steps
     }
-}
+}

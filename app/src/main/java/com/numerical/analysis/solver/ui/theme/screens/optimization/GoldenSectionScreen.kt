@@ -100,6 +100,8 @@ fun GoldenSectionScreen(
         }
     }
 
+    // Navigation is handled via ViewModel.navigationEvents
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -231,7 +233,6 @@ fun GoldenSectionScreen(
                         focusManager.clearFocus()
                         activeField = OptActiveField.NONE
                         viewModel.solveOptimization()
-                        onSolveComplete()
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(12.dp),

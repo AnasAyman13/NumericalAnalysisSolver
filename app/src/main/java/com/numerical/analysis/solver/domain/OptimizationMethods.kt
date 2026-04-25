@@ -1,10 +1,11 @@
 package com.numerical.analysis.solver.domain
 
+import kotlinx.coroutines.yield
 import kotlin.math.abs
 
 class OptimizationMethods {
 
-    fun goldenSectionPoint(
+    suspend fun goldenSectionPoint(
         initialXl: Double,
         initialXu: Double,
         eps: Double,
@@ -27,6 +28,7 @@ class OptimizationMethods {
         var error: Double
         
         while(true) {
+            yield()
             if(isMax) {
                 if(f1 > f2) {
                     xl = x2
@@ -70,7 +72,7 @@ class OptimizationMethods {
             if (error <= eps) break
             
             iter++
-            if (iter > 100) throw Exception("Failed to converge within 100 iterations")
+            if (iter > 200) throw Exception("Failed to converge within 200 iterations")
         }
         
         return steps

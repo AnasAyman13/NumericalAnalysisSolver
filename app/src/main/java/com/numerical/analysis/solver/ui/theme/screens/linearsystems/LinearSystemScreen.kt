@@ -42,11 +42,7 @@ fun LinearSystemScreen(
         "gauss-jordan" to "Gauss-Jordan"
     )
 
-    LaunchedEffect(state.result, state.isLoading) {
-        if (!state.isLoading && state.result != null && state.errorMessage == null) {
-            onSolveComplete()
-        }
-    }
+    // Navigation is handled via ViewModel.navigationEvents
 
     // ── Outer scaffold provides only the top bar; the bottom button bar is
     //   managed manually inside the content lambda so that imePadding() on

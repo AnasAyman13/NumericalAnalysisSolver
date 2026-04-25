@@ -288,22 +288,22 @@ private fun Btn(
 
     val containerColor: Color = when (keyType) {
         KeyType.NUMBER -> surfaceVariant.copy(alpha = 0.7f)
-        KeyType.OPERATOR -> Color(0xFFDBEAFD)                   // light blue
+        KeyType.OPERATOR -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
         KeyType.FUNCTION -> secondary.copy(alpha = 0.13f)
         KeyType.POWER -> tertiary.copy(alpha = 0.15f)
-        KeyType.CONTROL_CLEAR -> Color(0xFFFFE4E4)              // soft red bg
-        KeyType.CONTROL_BACK -> Color(0xFFFFF3E0)               // amber bg
+        KeyType.CONTROL_CLEAR -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+        KeyType.CONTROL_BACK -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
         KeyType.CONTROL_HIDE -> surfaceVariant.copy(alpha = 0.5f)
     }
 
     // --- icon / text colors ---
     val contentColor: Color = when (keyType) {
         KeyType.NUMBER -> MaterialTheme.colorScheme.onSurface
-        KeyType.OPERATOR -> Color(0xFF1565C0)                   // deep blue
+        KeyType.OPERATOR -> MaterialTheme.colorScheme.primary
         KeyType.FUNCTION -> secondary
         KeyType.POWER -> tertiary
-        KeyType.CONTROL_CLEAR -> Color(0xFFB91C1C)              // deep red
-        KeyType.CONTROL_BACK -> Color(0xFFD97706)               // amber
+        KeyType.CONTROL_CLEAR -> MaterialTheme.colorScheme.error
+        KeyType.CONTROL_BACK -> MaterialTheme.colorScheme.tertiary
         KeyType.CONTROL_HIDE -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
