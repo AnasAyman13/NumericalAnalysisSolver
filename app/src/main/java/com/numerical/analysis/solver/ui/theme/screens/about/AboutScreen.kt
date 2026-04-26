@@ -23,17 +23,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.numerical.analysis.solver.ui.theme.*
 import com.numerical.analysis.solver.ui.theme.components.MathBackground
 
-private val BackgroundLight @Composable get() = MaterialTheme.colorScheme.background
-private val PrimaryBlue @Composable get() = MaterialTheme.colorScheme.primary
-private val PrimaryBlueLight @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-private val Slate900 @Composable get() = MaterialTheme.colorScheme.onSurface
-private val Slate600 @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-private val Slate500 @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-private val Slate400 @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-private val Slate100 @Composable get() = MaterialTheme.colorScheme.surfaceVariant
-private val Slate50 @Composable get() = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
 
 @Composable
 fun AboutScreen(
@@ -82,7 +74,7 @@ private fun TopNavigationBar(onNavigateBack: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Back",
-                tint = PrimaryBlue,
+                tint = PrimaryColor,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -110,12 +102,12 @@ private fun AppHeader() {
             modifier = Modifier
                 .size(96.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .background(PrimaryBlue),
+                .background(PrimaryColor),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "Σ",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontSize = 48.sp,
                 fontFamily = FontFamily.Serif,
                 fontStyle = FontStyle.Italic,
@@ -156,7 +148,7 @@ private fun CourseInformationCard() {
                 text = "COURSE INFORMATION",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = PrimaryBlue,
+                color = PrimaryColor,
                 letterSpacing = 1.sp
             )
 
@@ -167,13 +159,13 @@ private fun CourseInformationCard() {
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(PrimaryBlueLight),
+                        .background(PrimaryColor.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = "Course",
-                        tint = PrimaryBlue
+                        tint = PrimaryColor
                     )
                 }
 
@@ -294,8 +286,8 @@ private fun DevelopmentTeamSection() {
                 name = "Anas Ayman El-Gebaili",
                 role = "Android Developer",
                 studentId = "111863",
-                avatarColor = PrimaryBlueLight,
-                textColor = PrimaryBlue
+                avatarColor = PrimaryColor.copy(alpha = 0.1f),
+                textColor = PrimaryColor
             )
 
             TeamMemberItem(

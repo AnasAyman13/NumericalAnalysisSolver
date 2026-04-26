@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import com.numerical.analysis.solver.domain.LinearAlgebraMethods
 import com.numerical.analysis.solver.domain.MathParser
-import com.numerical.analysis.solver.domain.OptimizationMethods
+import com.numerical.analysis.solver.domain.GoldenSectionSolver
 import com.numerical.analysis.solver.data.HistoryRepository
 import com.numerical.analysis.solver.data.HistoryEntry
 import androidx.compose.ui.graphics.Color
@@ -30,7 +30,7 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
 
     private val rootFindingMethods  = RootFindingMethods()
     private val linearAlgebraMethods = LinearAlgebraMethods()
-    private val optimizationMethods  = OptimizationMethods()
+    private val optimizationMethods  = GoldenSectionSolver()
     private val mathParser           = MathParser()
     private val historyRepository    = HistoryRepository(application)
     private var calculationJob: kotlinx.coroutines.Job? = null
@@ -102,7 +102,7 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                         equation = entry.equation,
                         xl       = entry.xl,
                         xu       = entry.xu,
-                        eps      = entry.eps,
+                        numIterations = entry.maxIterations,
                         isMax    = isMax,
                         errorMessage = null
                     )
@@ -330,16 +330,16 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
         equation: String? = null,
         xl: String? = null,
         xu: String? = null,
-        eps: String? = null,
+        numIterations: String? = null,
         isMax: Boolean? = null
     ) {
         _optimizationState.update {
             it.copy(
-                equation     = equation ?: it.equation,
-                xl           = xl       ?: it.xl,
-                xu           = xu       ?: it.xu,
-                eps          = eps      ?: it.eps,
-                isMax        = isMax    ?: it.isMax,
+                equation     = equation      ?: it.equation,
+                xl           = xl            ?: it.xl,
+                xu           = xu            ?: it.xu,
+                numIterations = numIterations ?: it.numIterations,
+                isMax        = isMax         ?: it.isMax,
                 errorMessage = null
             )
         }
@@ -352,11 +352,11 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val state = _optimizationState.value
                 val results = withContext(Dispatchers.Default) {
-                    val eps     = state.eps.toDoubleOrNull() ?: 1e-6
+                    val iters   = state.numIterations.toIntOrNull() ?: 10
                     val xl      = state.xl.toDouble()
                     val xu      = state.xu.toDouble()
                     val f       = mathParser.parseFunction(state.equation)
-                    optimizationMethods.goldenSectionPoint(xl, xu, eps, state.isMax, f)
+                    optimizationMethods.goldenSectionSearch(state.equation, xl, xu, iters, state.isMax, f)
                 }
 
                 if (results.isEmpty()) throw Exception("Zero iterations computed.")
@@ -377,7 +377,7 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                     equation    = state.equation,
                     xl          = state.xl,
                     xu          = state.xu,
-                    eps         = state.eps,
+                    maxIterations = state.numIterations,
                     methodType  = "golden_section"
                 ))
 

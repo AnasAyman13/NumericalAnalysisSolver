@@ -66,3 +66,17 @@ fun NumericalAnalysisSolverTheme(
         )
     }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Semantic Colour Aliases — theme-aware for Global Unification
+// ─────────────────────────────────────────────────────────────
+val PrimaryColor    @Composable get() = MaterialTheme.colorScheme.primary
+val BackgroundLight @Composable get() = MaterialTheme.colorScheme.background
+val Slate50  @Composable get() = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+val Slate100 @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+val Slate200 @Composable get() = MaterialTheme.colorScheme.outline
+val Slate400 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+val Slate500 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+val Slate600 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+val Slate700 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+val Slate900 @Composable get() = MaterialTheme.colorScheme.onSurface

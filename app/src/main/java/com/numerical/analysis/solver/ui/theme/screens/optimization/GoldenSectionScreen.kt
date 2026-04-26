@@ -32,17 +32,11 @@ import androidx.compose.ui.unit.sp
 import com.numerical.analysis.solver.ui.theme.components.KeypadKey
 import com.numerical.analysis.solver.ui.theme.components.ScientificKeypad
 import com.numerical.analysis.solver.ui.theme.components.handleKeypadInput
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.PrimaryColor
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate200
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate400
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate50
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate500
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate700
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate900
+import com.numerical.analysis.solver.ui.theme.*
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
 
 private enum class OptActiveField {
-    EQUATION, XL, XU, EPS, NONE
+    EQUATION, XL, XU, ITERATIONS, NONE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,7 +56,7 @@ fun GoldenSectionScreen(
     var equationValue by remember { mutableStateOf(TextFieldValue(state.equation)) }
     var xlValue by remember { mutableStateOf(TextFieldValue(state.xl)) }
     var xuValue by remember { mutableStateOf(TextFieldValue(state.xu)) }
-    var epsValue by remember { mutableStateOf(TextFieldValue(state.eps)) }
+    var iterationsValue by remember { mutableStateOf(TextFieldValue(state.numIterations)) }
 
     // When loadHistoryItem() pre-fills state.equation from a history entry,
     // this LaunchedEffect detects the change and syncs the TextField value
@@ -92,9 +86,9 @@ fun GoldenSectionScreen(
                 xuValue = handleKeypadInput(xuValue, key)
                 viewModel.updateOptimizationInput(xu = xuValue.text)
             }
-            OptActiveField.EPS -> {
-                epsValue = handleKeypadInput(epsValue, key)
-                viewModel.updateOptimizationInput(eps = epsValue.text)
+            OptActiveField.ITERATIONS -> {
+                iterationsValue = handleKeypadInput(iterationsValue, key)
+                viewModel.updateOptimizationInput(numIterations = iterationsValue.text)
             }
             OptActiveField.NONE -> {}
         }
@@ -134,12 +128,12 @@ fun GoldenSectionScreen(
                 if (state.errorMessage != null) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFCA5A5))
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
                     ) {
                         Text(
                             text = state.errorMessage!!,
-                            color = Color(0xFF991B1B),
+                            color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(16.dp),
                             fontSize = 14.sp
                         )
@@ -195,11 +189,11 @@ fun GoldenSectionScreen(
                 }
 
                 OptNumericField(
-                    value = epsValue,
-                    label = "Tolerance (%)",
-                    onValueChange = { epsValue = it; viewModel.updateOptimizationInput(eps = it.text) },
-                    isFocused = activeField == OptActiveField.EPS,
-                    onFocusGained = { keyboardController?.hide(); activeField = OptActiveField.EPS },
+                    value = iterationsValue,
+                    label = "Number of Iterations",
+                    onValueChange = { iterationsValue = it; viewModel.updateOptimizationInput(numIterations = it.text) },
+                    isFocused = activeField == OptActiveField.ITERATIONS,
+                    onFocusGained = { keyboardController?.hide(); activeField = OptActiveField.ITERATIONS },
                     modifier = Modifier.fillMaxWidth(0.5f)
                 )
 
@@ -240,7 +234,7 @@ fun GoldenSectionScreen(
                     enabled = !state.isLoading
                 ) {
                     if (state.isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                     } else {
                         Icon(Icons.Outlined.Calculate, null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))

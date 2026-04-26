@@ -28,9 +28,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.numerical.analysis.solver.data.HistoryEntry
+import com.numerical.analysis.solver.ui.theme.*
 import com.numerical.analysis.solver.ui.theme.components.MathBackground
 import com.numerical.analysis.solver.ui.theme.screens.home.FloatingNavBar
-import com.numerical.analysis.solver.ui.theme.screens.home.PrimaryBlue
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ fun HistoryScreen(
                         text = "HISTORY",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryBlue,
+                        color = PrimaryColor,
                         letterSpacing = 1.5.sp
                     )
                     Spacer(Modifier.height(4.dp))
@@ -453,13 +453,13 @@ private fun EmptyHistoryState(textMuted: Color) {
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .background(PrimaryBlue.copy(alpha = 0.08f)),
+                .background(PrimaryColor.copy(alpha = 0.08f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Outlined.History,
                 contentDescription = null,
-                tint = PrimaryBlue.copy(alpha = 0.4f),
+                tint = PrimaryColor.copy(alpha = 0.4f),
                 modifier = Modifier.size(40.dp)
             )
         }

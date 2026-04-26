@@ -4,7 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,12 +26,9 @@ import kotlin.math.sqrt
 // No warm tones. No yellows. No organic shaping.
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val OBSIDIAN       = Color(0xFF080A0F)   // deep blue-black void
-private val CHROME_CORE    = Color(0xFFFFFFFF)   // electric white nucleus
 private val CHROME_MID     = Color(0xFFD8DCE8)   // cool gray mid-ring
 private val CHROME_OUTER   = Color(0xFF8A909E)   // steel gray outer halo
 private val CHROME_FIELD   = Color(0xFF3A3F4D)   // dark field — keeps cool tone
-private val PORTAL_WHITE   = Color(0xFFFFFFFF)   // final workspace canvas
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SPLASH SCREEN
@@ -59,6 +56,10 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
 
     val configuration = LocalConfiguration.current
     val density       = LocalDensity.current
+
+    val obsidian = MaterialTheme.colorScheme.background
+    val chrome = MaterialTheme.colorScheme.onBackground
+    val portalWhite = MaterialTheme.colorScheme.surface
 
     val screenDiagonalPx = with(density) {
         val w = configuration.screenWidthDp.dp.toPx()
@@ -141,7 +142,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
 
     // ── UI ────────────────────────────────────────────────────────────────────
     Box(
-        modifier         = Modifier.fillMaxSize().background(OBSIDIAN),
+        modifier         = Modifier.fillMaxSize().background(obsidian),
         contentAlignment = Alignment.Center
     ) {
 
@@ -158,8 +159,8 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
                 drawCircle(
                     brush = Brush.radialGradient(
                         colorStops = arrayOf(
-                            0.00f to PORTAL_WHITE,
-                            0.91f to PORTAL_WHITE,
+                            0.00f to portalWhite,
+                            0.91f to portalWhite,
                             0.96f to CHROME_MID.copy(alpha = 0.45f),
                             0.99f to CHROME_OUTER.copy(alpha = 0.15f),
                             1.00f to Color.Transparent
@@ -174,7 +175,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
             }
 
             drawCircle(
-                color  = PORTAL_WHITE,
+                color  = portalWhite,
                 radius = r,
                 center = Offset(cx, cy),
                 alpha  = portalAlpha.value
@@ -228,7 +229,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
             drawCircle(
                 brush = Brush.radialGradient(
                     colorStops = arrayOf(
-                        0.00f to CHROME_CORE,
+                        0.00f to portalWhite,
                         0.35f to CHROME_MID.copy(alpha = 0.90f),
                         0.70f to CHROME_OUTER.copy(alpha = 0.55f),
                         1.00f to Color.Transparent
@@ -244,7 +245,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
             // Ring 1 — pure electric white core (the "prismatic" nucleus)
             // Very small, perfectly circular. No offset, no shading bias.
             drawCircle(
-                color  = CHROME_CORE,
+                color  = portalWhite,
                 radius = 9f * s,
                 center = Offset(cx, cy),
                 alpha  = sphereAlpha.value
@@ -291,7 +292,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
                 // Shimmer pass — white, centered bell-curve alpha
                 Text(
                     text          = "NUMERICAL SOLVER",
-                    color         = CHROME_CORE,
+                    color         = portalWhite,
                     fontSize      = 17.sp,
                     fontWeight    = FontWeight.W200,
                     fontFamily    = FontFamily.SansSerif,

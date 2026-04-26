@@ -11,7 +11,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.dp
+import com.numerical.analysis.solver.ui.theme.PrimaryColor
 
 @Composable
 fun NumericalLogo(
@@ -21,8 +23,8 @@ fun NumericalLogo(
     symbolsRotation: Float = 0f,
     glowAlpha: Float = 0f
 ) {
-    val baseBlue = Color(0xFF1A82E8)
-    val glowColor = Color(0xFF00FBFF)
+    val baseBlue = PrimaryColor
+    val glowColor = MaterialTheme.colorScheme.secondary
 
     Canvas(modifier = modifier.aspectRatio(1f).padding(20.dp)) {
         val width = size.width

@@ -32,9 +32,9 @@ fun getChaptersList(): List<ChapterData> {
             icon = Icons.Outlined.GridOn
         ),
         ChapterData(
-            title = "Chapter 3: Optimization",
+            title = "Golden Section Search",
             description = "Find the maximum or minimum of a single-variable function using the golden ratio.",
-            tags = listOf("Golden Section", "Max / Min"),
+            tags = listOf("Chapter 3", "R = 0.618", "Max / Min"),
             imageRes = null,
             icon = Icons.Outlined.Dataset,
             isBonus = false

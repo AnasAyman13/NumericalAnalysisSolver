@@ -6,7 +6,7 @@ data class OptimizationState(
     val equation: String = "x^2 - 4*x + 4",
     val xl: String = "0",
     val xu: String = "4",
-    val eps: String = "0.01",
+    val numIterations: String = "10",
     val isMax: Boolean = true,
     
     val steps: List<GoldenSectionStep> = emptyList(),

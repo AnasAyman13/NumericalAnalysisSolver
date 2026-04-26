@@ -48,15 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.BackgroundLight
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.PrimaryColor
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate100
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate200
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate50
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate500
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate600
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate700
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate900
+import com.numerical.analysis.solver.ui.theme.*
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
 import java.util.Locale
 
@@ -138,7 +130,7 @@ fun LinearSystemResultsScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .background(
-                                        if (isSuccess) Color(0xFFD1FAE5) else Color(0xFFFEE2E2),
+                                        if (isSuccess) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
                                         RoundedCornerShape(20.dp)
                                     ),
                                 contentAlignment = Alignment.Center
@@ -146,7 +138,7 @@ fun LinearSystemResultsScreen(
                                 Icon(
                                     imageVector = if (isSuccess) Icons.Filled.CheckCircle else Icons.Filled.Error,
                                     contentDescription = null,
-                                    tint = if (isSuccess) Color(0xFF059669) else Color(0xFFDC2626)
+                                    tint = if (isSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                                 )
                             }
                             Spacer(Modifier.width(12.dp))

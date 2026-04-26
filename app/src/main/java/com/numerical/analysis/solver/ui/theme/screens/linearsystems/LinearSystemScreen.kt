@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.focus.onFocusChanged
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.*
+import com.numerical.analysis.solver.ui.theme.*
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,12 +102,12 @@ fun LinearSystemScreen(
                 // Error banner
                 if (state.errorMessage != null) {
                     Card(
-                        colors   = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
+                        colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             state.errorMessage!!,
-                            color    = Color(0xFFB91C1C),
+                            color    = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(16.dp),
                             fontSize = 14.sp
                         )
@@ -241,7 +241,7 @@ fun LinearSystemScreen(
                             ) {
                                 Icon(
                                     Icons.Outlined.Add, null,
-                                    tint     = Color.White,
+                                    tint     = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -467,7 +467,7 @@ fun LinearSystemScreen(
                     ) {
                         if (state.isLoading) {
                             CircularProgressIndicator(
-                                color       = Color.White,
+                                color       = MaterialTheme.colorScheme.onPrimary,
                                 modifier    = Modifier.size(24.dp),
                                 strokeWidth = 2.dp
                             )

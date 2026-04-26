@@ -38,6 +38,7 @@ android {
         compose = true
     }
 }
+
 dependencies {
     // 1. Navigation (Unified version)
     implementation("androidx.navigation:navigation-compose:2.7.7")

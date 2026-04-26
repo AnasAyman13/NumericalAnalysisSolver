@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.numerical.analysis.solver.domain.BracketingStep
 import com.numerical.analysis.solver.domain.OpenMethodsStep
+import com.numerical.analysis.solver.ui.theme.*
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
 import java.util.Locale
 
@@ -214,7 +215,7 @@ fun RootFindingResultsScreen(
                             .fillMaxWidth()
                             .horizontalScroll(horizontalScrollState) // same state = synchronized
                             .background(
-                                if (state.isConverged && index == state.bracketingResults.lastIndex) Color(0xFFD1FAE5)
+                                if (state.isConverged && index == state.bracketingResults.lastIndex) MaterialTheme.colorScheme.primaryContainer
                                 else if (index % 2 == 0) MaterialTheme.colorScheme.surface
                                 else Slate50.copy(alpha = 0.55f)
                             )
@@ -235,7 +236,7 @@ fun RootFindingResultsScreen(
                                 if (state.isConverged && index == state.bracketingResults.lastIndex) "$errStr ✓" else errStr
                             },
                             width = COL_ERR,
-                            color = if (state.isConverged && index == state.bracketingResults.lastIndex) Color(0xFF059669) else errColor(step.error)
+                            color = if (state.isConverged && index == state.bracketingResults.lastIndex) MaterialTheme.colorScheme.primary else errColor(step.error)
                         )
                     }
                 }
@@ -245,7 +246,7 @@ fun RootFindingResultsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                if (state.isConverged && index == state.openMethodsResults.lastIndex) Color(0xFFD1FAE5)
+                                if (state.isConverged && index == state.openMethodsResults.lastIndex) MaterialTheme.colorScheme.primaryContainer
                                 else if (index % 2 == 0) MaterialTheme.colorScheme.surface
                                 else Slate50.copy(alpha = 0.55f)
                             )
@@ -265,7 +266,7 @@ fun RootFindingResultsScreen(
                             modifier = Modifier.weight(0.20f),
                             textAlign = TextAlign.End,
                             fontSize = 12.sp,
-                            color = if (state.isConverged && index == state.openMethodsResults.lastIndex) Color(0xFF059669) else errColor(step.error),
+                            color = if (state.isConverged && index == state.openMethodsResults.lastIndex) MaterialTheme.colorScheme.primary else errColor(step.error),
                             fontFamily = FontFamily.Monospace,
                             fontWeight = if (state.isConverged && index == state.openMethodsResults.lastIndex) FontWeight.Bold else FontWeight.Normal
                         )
@@ -306,16 +307,16 @@ private fun SummaryCard(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .background(Color(0xFFD1FAE5), RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(16.dp))
+                    Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = if (isConverged) "Converged" else "Did not converge",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF059669)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
                 Text(method, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Slate900)
@@ -350,15 +351,15 @@ private fun SummaryCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(if (isConverged) Color(0xFFECFDF5) else Color(0xFFFEF2F2), RoundedCornerShape(8.dp))
-                        .border(1.dp, if (isConverged) Color(0xFFA7F3D0) else Color(0xFFFECACA), RoundedCornerShape(8.dp))
+                        .background(if (isConverged) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(8.dp))
+                        .border(1.dp, if (isConverged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error, RoundedCornerShape(8.dp))
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         if (isConverged) Icons.Filled.CheckCircle else Icons.Filled.CheckCircle,
                         contentDescription = null,
-                        tint = if (isConverged) Color(0xFF059669) else Color(0xFFDC2626),
+                        tint = if (isConverged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(Modifier.width(8.dp))
@@ -366,7 +367,7 @@ private fun SummaryCard(
                         text = stoppingReason,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isConverged) Color(0xFF059669) else Color(0xFFDC2626)
+                        color = if (isConverged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -418,9 +419,9 @@ private fun fmt(value: Double): String = String.format(Locale.US, "%.5f", value)
 
 @Composable
 private fun fColor(value: Double): Color = when {
-    value < -1e-8 -> Color(0xFFDC2626)  // red   — negative
-    value >  1e-8 -> Color(0xFF16A34A)  // green — positive
-    else          -> Slate400           // gray  — near zero (root!)
+    value < -1e-8 -> MaterialTheme.colorScheme.error
+    value >  1e-8 -> Color(0xFF16A34A)  // green is usually fine for positive
+    else          -> Slate400
 }
 
 @Composable

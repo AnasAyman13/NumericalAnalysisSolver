@@ -39,21 +39,9 @@ import com.numerical.analysis.solver.ui.theme.components.KeypadKey
 import com.numerical.analysis.solver.ui.theme.components.ScientificKeypad
 import com.numerical.analysis.solver.ui.theme.components.handleKeypadInput
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
+import com.numerical.analysis.solver.ui.theme.*
 import kotlinx.coroutines.launch
 
-// ─────────────────────────────────────────────────────────────
-// Colour aliases — theme-aware so both Light and Dark work
-// ─────────────────────────────────────────────────────────────
-val PrimaryColor    @Composable get() = MaterialTheme.colorScheme.primary
-val BackgroundLight @Composable get() = MaterialTheme.colorScheme.background
-val Slate50  @Composable get() = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-val Slate100 @Composable get() = MaterialTheme.colorScheme.surfaceVariant
-val Slate200 @Composable get() = MaterialTheme.colorScheme.outline
-val Slate400 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-val Slate500 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-val Slate600 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-val Slate700 @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-val Slate900 @Composable get() = MaterialTheme.colorScheme.onSurface
 
 // ─────────────────────────────────────────────────────────────
 // Which field the custom keypad is currently writing to
@@ -234,12 +222,12 @@ fun RootFindingScreen(
                     // ── Error banner ────────────────────────────────────────
                     if (state.errorMessage != null) {
                         Card(
-                            colors   = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
+                            colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
                                 state.errorMessage!!,
-                                color    = Color(0xFFB91C1C),
+                                color    = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(16.dp),
                                 fontSize = 14.sp
                             )
@@ -377,14 +365,14 @@ fun RootFindingScreen(
                                             .background(if (isAbsolute) PrimaryColor else Color.Transparent)
                                             .clickable { viewModel.updateRootFindingInput(toleranceMode = com.numerical.analysis.solver.ui.screens.state.ToleranceMode.ABSOLUTE) },
                                         contentAlignment = Alignment.Center
-                                    ) { Text("Absolute", color = if (isAbsolute) Color.White else Slate600, fontSize = 13.sp, fontWeight = FontWeight.Medium) }
+                                    ) { Text("Absolute", color = if (isAbsolute) MaterialTheme.colorScheme.onPrimary else Slate600, fontSize = 13.sp, fontWeight = FontWeight.Medium) }
                                     Box(
                                         modifier = Modifier.weight(1f).fillMaxHeight()
                                             .padding(2.dp).clip(RoundedCornerShape(6.dp))
                                             .background(if (!isAbsolute) PrimaryColor else Color.Transparent)
                                             .clickable { viewModel.updateRootFindingInput(toleranceMode = com.numerical.analysis.solver.ui.screens.state.ToleranceMode.PERCENTAGE) },
                                         contentAlignment = Alignment.Center
-                                    ) { Text("Percentage (%)", color = if (!isAbsolute) Color.White else Slate600, fontSize = 13.sp, fontWeight = FontWeight.Medium) }
+                                    ) { Text("Percentage (%)", color = if (!isAbsolute) MaterialTheme.colorScheme.onPrimary else Slate600, fontSize = 13.sp, fontWeight = FontWeight.Medium) }
                                 }
                             }
                         }
@@ -434,12 +422,12 @@ fun RootFindingScreen(
                             .weight(2f)
                             .height(52.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF1586EF), Color(0xFF4AC29A))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+                                    )
                                 )
-                            )
-                            .clickable(enabled = !state.isLoading) {
+                                .clickable(enabled = !state.isLoading) {
                                 focusManager.clearFocus()
                                 activeField = ActiveField.NONE
                                 viewModel.solveRootPath(selectedMethod)
@@ -447,14 +435,14 @@ fun RootFindingScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (state.isLoading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                         } else {
                             Row(
                                 verticalAlignment     = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Outlined.Calculate, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                Text("SOLVE", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Icon(Icons.Outlined.Calculate, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
+                                Text("SOLVE", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             }
                         }
                     }

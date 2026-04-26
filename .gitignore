@@ -1,15 +1,21 @@
+# Android Studio / IntelliJ / Gradle
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
+/.idea/
 /build
 /captures
 .externalNativeBuild
 .cxx
+*.apk
+*.aar
+
+# macOS
+.DS_Store
+
+# Local configuration
 local.properties
+gradle.properties (don't ignore this if you need project props, but usually it's safe to keep)
+
+# Visual Studio Code
+.vscode/

@@ -45,8 +45,7 @@ import com.numerical.analysis.solver.data.ChapterData
 import com.numerical.analysis.solver.data.getChaptersList
 import com.numerical.analysis.solver.ui.theme.components.MathBackground
 
-val PrimaryBlue = Color(0xFF1586EF)
-val GradientEnd = Color(0xFF4AC29A)
+import com.numerical.analysis.solver.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +84,7 @@ fun HomeScreen(
                                 text          = "DASHBOARD",
                                 fontSize      = 11.sp,
                                 fontWeight    = FontWeight.Bold,
-                                color         = PrimaryBlue,
+                                color         = PrimaryColor,
                                 letterSpacing = 2.sp
                             )
                             Text(
@@ -142,10 +141,10 @@ fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit)
         label          = "cardScale"
     )
 
-    val glassColor  = if (isDark) Color(0xFF1C1C2E).copy(alpha = 0.85f)
-                      else        Color(0xFFFFFFFF).copy(alpha = 0.80f)
-    val borderColor = if (isDark) Color(0xFF3A3A5C).copy(alpha = 0.6f)
-                      else        Color(0xFFDDE8F5).copy(alpha = 0.9f)
+    val glassColor  = if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+                      else        MaterialTheme.colorScheme.surface.copy(alpha = 0.80f)
+    val borderColor = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                      else        MaterialTheme.colorScheme.outline.copy(alpha = 0.9f)
     val onSurface   = MaterialTheme.colorScheme.onSurface
     val onVariant   = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -156,7 +155,7 @@ fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit)
             .shadow(
                 elevation  = if (isDark) 6.dp else 14.dp,
                 shape      = RoundedCornerShape(20.dp),
-                spotColor  = PrimaryBlue.copy(alpha = 0.18f),
+                spotColor  = PrimaryColor.copy(alpha = 0.18f),
                 ambientColor = Color.Black.copy(alpha = 0.10f)
             )
             .clip(RoundedCornerShape(20.dp))
@@ -172,9 +171,9 @@ fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit)
         Column {
             // ── Soft Gradient Banner with Large Math Symbol ──────────────────
             val bannerGradient = when {
-                chapter.title.contains("Root", true) -> listOf(Color(0xFF6B8DD6), Color(0xFF8E37D7))
-                chapter.title.contains("Linear", true) -> listOf(Color(0xFF1586EF), Color(0xFF4AC29A))
-                else -> listOf(Color(0xFFF59E0B), Color(0xFFEF4444))
+                chapter.title.contains("Root", true) -> listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+                chapter.title.contains("Linear", true) -> listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.tertiary)
+                else -> listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.error)
             }
             val bgText = when {
                 chapter.title.contains("Root", true) -> "∫"
@@ -233,14 +232,14 @@ fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit)
                     chapter.tags.forEach { tag ->
                         Box(
                             modifier = Modifier
-                                .background(PrimaryBlue.copy(alpha = 0.10f), RoundedCornerShape(6.dp))
-                                .border(1.dp, PrimaryBlue.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                                .background(PrimaryColor.copy(alpha = 0.10f), RoundedCornerShape(6.dp))
+                                .border(1.dp, PrimaryColor.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
                                 .padding(horizontal = 9.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text       = tag,
                                 fontSize   = 11.sp,
-                                color      = PrimaryBlue,
+                                color      = PrimaryColor,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -258,14 +257,14 @@ fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit)
                     Text(
                         text       = "Open",
                         fontSize   = 13.sp,
-                        color      = PrimaryBlue,
+                        color      = PrimaryColor,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(Modifier.width(4.dp))
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
-                        tint               = PrimaryBlue,
+                        tint               = PrimaryColor,
                         modifier           = Modifier.size(16.dp)
                     )
                 }
@@ -324,7 +323,7 @@ fun FloatingNavBar(
                     val selected = currentRoute == item.route
 
                     val iconTint by animateColorAsState(
-                        targetValue   = if (selected) PrimaryBlue else unselectedIcon,
+                        targetValue   = if (selected) PrimaryColor else unselectedIcon,
                         animationSpec = tween(250), label = "iconTint"
                     )
                     val labelAlpha by animateFloatAsState(
@@ -344,7 +343,7 @@ fun FloatingNavBar(
                             modifier = Modifier
                                 .size(width = if (selected) 24.dp else 6.dp, height = 4.dp)
                                 .clip(RoundedCornerShape(50))
-                                .background(if (selected) PrimaryBlue else Color.Transparent)
+                                .background(if (selected) PrimaryColor else Color.Transparent)
                         )
                         Icon(
                             imageVector   = item.icon,
@@ -356,7 +355,7 @@ fun FloatingNavBar(
                             text       = item.label,
                             fontSize   = 11.sp,
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                            color      = if (selected) PrimaryBlue else unselectedIcon,
+                            color      = if (selected) PrimaryColor else unselectedIcon,
                             modifier   = Modifier.alpha(labelAlpha)
                         )
                     }
@@ -389,7 +388,7 @@ fun ThemeToggleSwitch(isDark: Boolean, onToggle: () -> Unit) {
         modifier = Modifier
             .width(56.dp)
             .height(32.dp)
-            .shadow(4.dp, RoundedCornerShape(50), spotColor = PrimaryBlue.copy(alpha = 0.2f))
+            .shadow(4.dp, RoundedCornerShape(50), spotColor = PrimaryColor.copy(alpha = 0.2f))
             .clip(RoundedCornerShape(50))
             .background(trackColor)
             .clickable(onClick = onToggle),

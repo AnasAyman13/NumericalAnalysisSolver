@@ -2,6 +2,7 @@ package com.numerical.analysis.solver.ui.theme.screens.optimization
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -24,7 +26,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -44,15 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.BackgroundLight
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.PrimaryColor
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate100
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate200
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate400
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate50
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate500
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate900
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.Slate700
+import com.numerical.analysis.solver.ui.theme.*
 import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
 import java.util.Locale
 
@@ -64,6 +57,7 @@ fun GoldenSectionResultsScreen(
 ) {
     val state by viewModel.optimizationState.collectAsState()
     val iterationsCount = state.steps.size
+    val tableScrollState = rememberScrollState()
 
     Scaffold(
         containerColor = BackgroundLight,
@@ -93,13 +87,6 @@ fun GoldenSectionResultsScreen(
         }
     ) { padding ->
 
-        // ─────────────────────────────────────────────────────────────────────
-        // Same single-LazyColumn architecture as RootFindingResultsScreen:
-        //   • Summary card + title use item {}
-        //   • Header is a stickyHeader {} so it stays pinned while scrolling
-        //   • Data rows are itemsIndexed {}
-        //   • Entire screen scrolls: no content ever cut off in landscape
-        // ─────────────────────────────────────────────────────────────────────
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -128,13 +115,13 @@ fun GoldenSectionResultsScreen(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .background(Color(0xFFD1FAE5), RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp))
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
                                 Icon(
                                     Icons.Filled.CheckCircle,
                                     contentDescription = null,
-                                    tint = Color(0xFF059669),
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(4.dp))
@@ -142,7 +129,7 @@ fun GoldenSectionResultsScreen(
                                     if (state.isConverged) "Converged" else "Diverged",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF059669)
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                             Text(
@@ -210,84 +197,60 @@ fun GoldenSectionResultsScreen(
                 )
             }
 
-            // ── Sticky table header ──────────────────────────────────────────
-            stickyHeader {
-                Row(
+            // ── The Table with Horizontal Scroll ──────────────────────────────
+            item {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface) // opaque background prevents bleed-through
-                        .background(Slate50)
-                        .border(1.dp, Slate200)
-                        .padding(vertical = 10.dp, horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .horizontalScroll(tableScrollState)
+                        .border(1.dp, Slate200, RoundedCornerShape(4.dp))
                 ) {
-                    Text("i",      modifier = Modifier.weight(0.12f), textAlign = TextAlign.Center, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Slate500)
-                    Text("x_l",   modifier = Modifier.weight(0.20f), textAlign = TextAlign.End,    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Slate500)
-                    Text("x_u",   modifier = Modifier.weight(0.20f), textAlign = TextAlign.End,    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Slate500)
-                    Text("x_opt", modifier = Modifier.weight(0.26f), textAlign = TextAlign.End,    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Slate500)
-                    Text("Error%",modifier = Modifier.weight(0.22f), textAlign = TextAlign.End,    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                    // Header
+                    Row(
+                        modifier = Modifier
+                            .width(800.dp) // Fixed width for horizontal scrolling
+                            .background(Slate50)
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("i",    modifier = Modifier.weight(0.4f), textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("xl",   modifier = Modifier.weight(1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("f(xl)",modifier = Modifier.weight(1.1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("xu",   modifier = Modifier.weight(1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("f(xu)",modifier = Modifier.weight(1.1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("x1",   modifier = Modifier.weight(1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("f(x1)",modifier = Modifier.weight(1.1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("x2",   modifier = Modifier.weight(1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("f(x2)",modifier = Modifier.weight(1.1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                        Text("d",    modifier = Modifier.weight(1f),   textAlign = TextAlign.Center, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                    }
+
+                    // Data Rows
+                    state.steps.forEachIndexed { index, step ->
+                        HorizontalDivider(color = Slate100, thickness = 0.5.dp)
+                        Row(
+                            modifier = Modifier
+                                .width(800.dp)
+                                .background(if (index % 2 == 0) Color.White else Slate50.copy(alpha = 0.3f))
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("${step.iter}", modifier = Modifier.weight(0.4f), textAlign = TextAlign.Center, fontSize = 9.sp, color = PrimaryColor, fontWeight = FontWeight.Bold)
+                            Text(String.format(Locale.US, "%.5f", step.xl), modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = Slate900)
+                            Text(String.format(Locale.US, "%.5f", step.fXl),modifier = Modifier.weight(1.1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = Slate700)
+                            Text(String.format(Locale.US, "%.5f", step.xu), modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = Slate900)
+                            Text(String.format(Locale.US, "%.5f", step.fXu),modifier = Modifier.weight(1.1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = Slate700)
+                            Text(String.format(Locale.US, "%.5f", step.x1), modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = Slate900)
+                            Text(String.format(Locale.US, "%.5f", step.fX1),modifier = Modifier.weight(1.1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = Slate700)
+                            Text(String.format(Locale.US, "%.5f", step.x2), modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = Slate900)
+                            Text(String.format(Locale.US, "%.5f", step.fX2),modifier = Modifier.weight(1.1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = Slate700)
+                            Text(String.format(Locale.US, "%.5f", step.d),  modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = PrimaryColor, fontWeight = FontWeight.Medium)
+                        }
+                    }
                 }
             }
 
-            // ── Data rows ────────────────────────────────────────────────────
-            itemsIndexed(state.steps) { index, step ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            if (index % 2 == 0) MaterialTheme.colorScheme.surface
-                            else Slate50.copy(alpha = 0.55f)
-                        )
-                        .border(0.5.dp, Slate100)
-                        .padding(vertical = 9.dp, horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "${step.iter}",
-                        modifier = Modifier.weight(0.12f),
-                        textAlign = TextAlign.Center,
-                        fontSize = 12.sp,
-                        color = PrimaryColor,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Text(
-                        String.format(Locale.US, "%.5f", step.xl),
-                        modifier = Modifier.weight(0.20f),
-                        textAlign = TextAlign.End,
-                        fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = Slate900
-                    )
-                    Text(
-                        String.format(Locale.US, "%.5f", step.xu),
-                        modifier = Modifier.weight(0.20f),
-                        textAlign = TextAlign.End,
-                        fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = Slate900
-                    )
-                    Text(
-                        String.format(Locale.US, "%.5f", step.xOpt),
-                        modifier = Modifier.weight(0.26f),
-                        textAlign = TextAlign.End,
-                        fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.SemiBold,
-                        color = PrimaryColor
-                    )
-                    Text(
-                        if (step.iter == 0) "—" else String.format(Locale.US, "%.5f%%", step.error),
-                        modifier = Modifier.weight(0.22f),
-                        textAlign = TextAlign.End,
-                        fontSize = 12.sp,
-                        color = if (step.error < 1.0 && step.iter != 0) Color(0xFF16A34A) else Slate400,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-            }
-
-            item { Spacer(Modifier.height(24.dp)) }
+            item { Spacer(Modifier.height(32.dp)) }
         }
     }
 }
