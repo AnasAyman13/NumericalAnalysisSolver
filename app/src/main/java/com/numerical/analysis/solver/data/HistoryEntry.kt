@@ -20,3 +20,4 @@ data class HistoryEntry(
     val maxIterations: String = "100",
     val methodType: String = ""
 )
+

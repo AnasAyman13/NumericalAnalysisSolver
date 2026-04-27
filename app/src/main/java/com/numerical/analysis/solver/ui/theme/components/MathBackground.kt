@@ -40,3 +40,4 @@ fun MathBackground(modifier: Modifier = Modifier) {
             }
     )
 }
+

@@ -8,11 +8,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.numerical.analysis.solver.navigation.AppNavGraph
 import com.numerical.analysis.solver.ui.theme.NumericalAnalysisSolverTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         // Let Compose manage all insets (including IME / keyboard)
         WindowCompat.setDecorFitsSystemWindows(window, false)

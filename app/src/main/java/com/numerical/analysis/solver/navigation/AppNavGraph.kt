@@ -14,18 +14,18 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import kotlinx.coroutines.flow.collect
-import com.numerical.analysis.solver.ui.theme.state.SolverViewModel
+import com.numerical.analysis.solver.ui.state.SolverViewModel
 import com.numerical.analysis.solver.ui.screens.splash.SplashScreen
 import com.numerical.analysis.solver.ui.screens.about.AboutScreen
-import com.numerical.analysis.solver.ui.theme.screens.home.HomeScreen
-import com.numerical.analysis.solver.ui.theme.screens.history.HistoryScreen
-import com.numerical.analysis.solver.ui.theme.screens.history.HistoryDetailScreen
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.RootFindingScreen
-import com.numerical.analysis.solver.ui.theme.screens.rootfinding.RootFindingResultsScreen
-import com.numerical.analysis.solver.ui.theme.screens.linearsystems.LinearSystemScreen
-import com.numerical.analysis.solver.ui.theme.screens.linearsystems.LinearSystemResultsScreen
-import com.numerical.analysis.solver.ui.theme.screens.optimization.GoldenSectionScreen
-import com.numerical.analysis.solver.ui.theme.screens.optimization.GoldenSectionResultsScreen
+import com.numerical.analysis.solver.ui.screens.home.HomeScreen
+import com.numerical.analysis.solver.ui.screens.history.HistoryScreen
+import com.numerical.analysis.solver.ui.screens.history.HistoryDetailScreen
+import com.numerical.analysis.solver.ui.screens.rootfinding.RootFindingScreen
+import com.numerical.analysis.solver.ui.screens.rootfinding.RootFindingResultsScreen
+import com.numerical.analysis.solver.ui.screens.linearsystems.LinearSystemScreen
+import com.numerical.analysis.solver.ui.screens.linearsystems.LinearSystemResultsScreen
+import com.numerical.analysis.solver.ui.screens.optimization.GoldenSectionScreen
+import com.numerical.analysis.solver.ui.screens.optimization.GoldenSectionResultsScreen
 
 private const val SPLASH               = "splash"
 private const val HOME                 = "home"
@@ -240,3 +240,4 @@ fun AppNavGraph(
         }
     }
 }
+
