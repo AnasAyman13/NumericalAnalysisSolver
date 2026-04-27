@@ -46,17 +46,17 @@ fun AboutScreen(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             AppHeader()
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             CourseInformationCard()
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             FacultySection()
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             DevelopmentTeamSection()
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
             Footer()
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(28.dp))
         }
         }
     }
@@ -67,7 +67,7 @@ private fun TopNavigationBar(onNavigateBack: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 40.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onNavigateBack) {
@@ -88,7 +88,7 @@ private fun TopNavigationBar(onNavigateBack: () -> Unit) {
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.size(48.dp))
+        Spacer(modifier = Modifier.size(40.dp))
     }
 }
 
@@ -200,7 +200,7 @@ private fun CourseInformationCard() {
 private fun FacultySection() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Faculty",
+            text = "Under the Supervision of",
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color = Slate900,

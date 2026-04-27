@@ -39,6 +39,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.numerical.analysis.solver.data.ChapterData
@@ -127,9 +128,7 @@ fun HomeScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Glassmorphism Chapter Card
-// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
 fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit) {
 
@@ -153,9 +152,9 @@ fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit)
             .fillMaxWidth()
             .scale(cardScale)
             .shadow(
-                elevation  = if (isDark) 6.dp else 14.dp,
-                shape      = RoundedCornerShape(20.dp),
-                spotColor  = PrimaryColor.copy(alpha = 0.18f),
+                elevation = if (isDark) 6.dp else 14.dp,
+                shape = RoundedCornerShape(20.dp),
+                spotColor = PrimaryColor.copy(alpha = 0.18f),
                 ambientColor = Color.Black.copy(alpha = 0.10f)
             )
             .clip(RoundedCornerShape(20.dp))
@@ -163,8 +162,8 @@ fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit)
             .border(1.dp, borderColor, RoundedCornerShape(20.dp))
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onPress   = { isPressed = true; tryAwaitRelease(); isPressed = false },
-                    onTap     = { onClick() }
+                    onPress = { isPressed = true; tryAwaitRelease(); isPressed = false },
+                    onTap = { onClick() }
                 )
             }
     ) {
@@ -232,8 +231,15 @@ fun GlassChapterCard(chapter: ChapterData, isDark: Boolean, onClick: () -> Unit)
                     chapter.tags.forEach { tag ->
                         Box(
                             modifier = Modifier
-                                .background(PrimaryColor.copy(alpha = 0.10f), RoundedCornerShape(6.dp))
-                                .border(1.dp, PrimaryColor.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                                .background(
+                                    PrimaryColor.copy(alpha = 0.10f),
+                                    RoundedCornerShape(6.dp)
+                                )
+                                .border(
+                                    1.dp,
+                                    PrimaryColor.copy(alpha = 0.25f),
+                                    RoundedCornerShape(6.dp)
+                                )
                                 .padding(horizontal = 9.dp, vertical = 4.dp)
                         ) {
                             Text(
@@ -305,9 +311,9 @@ fun FloatingNavBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(
-                    elevation    = 24.dp,
-                    shape        = RoundedCornerShape(50),
-                    spotColor    = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    elevation = 24.dp,
+                    shape = RoundedCornerShape(50),
+                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                     ambientColor = Color.Black.copy(alpha = 0.12f)
                 )
                 .clip(RoundedCornerShape(50))
@@ -411,4 +417,13 @@ fun ThemeToggleSwitch(isDark: Boolean, onToggle: () -> Unit) {
             )
         }
     }
+}
+
+
+@Preview(showBackground = false, showSystemUi = true)
+@Composable
+private fun v() {
+    HomeScreen("home", true, {}, {}, {})
+
+    
 }

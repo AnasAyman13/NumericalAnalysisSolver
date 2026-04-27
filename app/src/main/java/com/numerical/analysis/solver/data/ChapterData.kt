@@ -3,7 +3,9 @@ package com.numerical.analysis.solver.data
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Dataset
 import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
 import com.numerical.analysis.solver.R
 
 data class ChapterData(
@@ -34,10 +36,11 @@ fun getChaptersList(): List<ChapterData> {
         ChapterData(
             title = "Golden Section Search",
             description = "Find the maximum or minimum of a single-variable function using the golden ratio.",
-            tags = listOf("Chapter 3", "R = 0.618", "Max / Min"),
+            tags = listOf("Chapter 3", "Golden Section Search", "Max / Min"),
             imageRes = null,
             icon = Icons.Outlined.Dataset,
             isBonus = false
         )
     )
 }
+
