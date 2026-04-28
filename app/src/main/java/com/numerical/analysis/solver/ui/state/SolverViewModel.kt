@@ -16,6 +16,7 @@ import com.numerical.analysis.solver.data.HistoryEntry
 import androidx.compose.ui.graphics.Color
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.numerical.analysis.solver.domain.methods.SecantStep
 import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
@@ -228,7 +229,9 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                             val xMinus1 = state.xMinus1.toDouble()
                             val results = SecantSolver.solve(xMinus1, xi, eps, maxIter, state.toleranceMode, f)
                             if (results.isEmpty()) throw Exception("Zero iterations computed.")
-                            Triple(results, results.last().error <= eps, results.lastOrNull()?.xiPlus1)
+                            // converged when last row (after initial) has error <= eps
+                            val conv = results.size > 1 && results.last().error <= eps
+                            Triple(results, conv, results.lastOrNull()?.xi)
                         }
                         else -> throw Exception("Unknown method")
                     }
@@ -253,10 +256,13 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                 )
 
                 // Compute the stopping reason
-                val lastError = if (method in listOf("Bisection", "False Position")) {
-                    (step1 as List<com.numerical.analysis.solver.domain.methods.BracketingStep>).lastOrNull()?.error ?: 0.0
-                } else {
-                    (step1 as List<com.numerical.analysis.solver.domain.methods.OpenMethodsStep>).lastOrNull()?.error ?: 0.0
+                val lastError = when {
+                    method in listOf("Bisection", "False Position") ->
+                        (step1 as List<com.numerical.analysis.solver.domain.methods.BracketingStep>).lastOrNull()?.error ?: 0.0
+                    method == "Secant" ->
+                        (step1 as List<SecantStep>).lastOrNull()?.error ?: 0.0
+                    else ->
+                        (step1 as List<com.numerical.analysis.solver.domain.methods.OpenMethodsStep>).lastOrNull()?.error ?: 0.0
                 }
                 
                 val epsValStr = String.format(java.util.Locale.US, "%.5f", state.eps.toDoubleOrNull() ?: 1e-6)
@@ -279,10 +285,20 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                         )
                         if (conv) saveHistory(resultEntry)
                         finalized
+                    } else if (method == "Secant") {
+                        @Suppress("UNCHECKED_CAST")
+                        val finalized = it.copy(
+                            secantResults      = step1 as List<SecantStep>,
+                            openMethodsResults = emptyList(),
+                            isConverged = conv, rootResult = res, stoppingReason = reason, isLoading = false
+                        )
+                        if (conv) saveHistory(resultEntry)
+                        finalized
                     } else {
                         @Suppress("UNCHECKED_CAST")
                         val finalized = it.copy(
                             openMethodsResults = step1 as List<com.numerical.analysis.solver.domain.methods.OpenMethodsStep>,
+                            secantResults      = emptyList(),
                             isConverged = conv, rootResult = res, stoppingReason = reason, isLoading = false
                         )
                         if (conv) saveHistory(resultEntry)
@@ -438,6 +454,13 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
     private fun saveHistory(entry: HistoryEntry) {
         viewModelScope.launch(Dispatchers.IO) {
             historyRepository.addEntry(entry)
+            loadHistory()
+        }
+    }
+
+    fun deleteHistoryItem(entry: HistoryEntry) {
+        viewModelScope.launch(Dispatchers.IO) {
+            historyRepository.deleteEntry(entry)
             loadHistory()
         }
     }

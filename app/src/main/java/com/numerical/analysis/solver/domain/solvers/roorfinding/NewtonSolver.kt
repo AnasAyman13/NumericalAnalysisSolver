@@ -20,30 +20,32 @@ object NewtonSolver {
         fDash: (Double) -> Double
     ): List<OpenMethodsStep> {
         val steps = mutableListOf<OpenMethodsStep>()
+        var xiMinus1 = 0.0
         var xi = x0
-        var xiPlus1 = 0.0
-        var error = 0.0
         var iter = 0
 
         while (iter <= maxIter) {
             yield()
+            
+            // Calculate Error of the CURRENT xi (compared to xiMinus1)
+            val error = if (iter == 0) {
+                0.0
+            } else {
+                val rawError = if (mode == ToleranceMode.ABSOLUTE) {
+                    abs(xi - xiMinus1)
+                } else {
+                    if (abs(xi) < 1e-18) 0.0 else abs((xi - xiMinus1) / xi) * 100.0
+                }
+                round(rawError)
+            }
+
             val fXi = round(f(xi))
             val dXi = round(fDash(xi))
             
             if (abs(dXi) < 1e-20) break
 
-            // Xi+1 Calculation + Rounding
-            xiPlus1 = round(xi - (fXi / dXi))
-
-            if (iter > 0) {
-                // Error Calculation + Rounding
-                val rawError = if (mode == ToleranceMode.ABSOLUTE) {
-                    abs(xiPlus1 - xi)
-                } else {
-                    if (abs(xiPlus1) < 1e-18) 0.0 else abs((xiPlus1 - xi) / xiPlus1) * 100.0
-                }
-                error = round(rawError)
-            }
+            // Calculate NEXT xi (Xi+1)
+            val xiPlus1 = round(xi - (fXi / dXi))
 
             steps.add(
                 OpenMethodsStep(
@@ -51,14 +53,15 @@ object NewtonSolver {
                     xi = xi,
                     xiPlus1 = xiPlus1,
                     fXi = fXi,
-                    error = if (iter == 0) 0.0 else error
+                    error = error
                 )
             )
 
-            // Stopping Criteria
+            // Stopping Criteria uses the error of the current xi
             if (iter > 0 && error <= eps) break
             if (abs(fXi) < 1e-12) break
 
+            xiMinus1 = xi
             xi = xiPlus1
             iter++
         }

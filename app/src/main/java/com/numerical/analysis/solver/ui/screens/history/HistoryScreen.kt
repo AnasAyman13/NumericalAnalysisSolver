@@ -15,7 +15,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,13 +99,13 @@ fun HistoryScreen(
                 if (historyEntries.isEmpty()) {
                     item { EmptyHistoryState(textMuted) }
                 } else {
-                    itemsIndexed(historyEntries) { index, entry ->
+                    itemsIndexed(historyEntries, key = { _, entry -> entry.id }) { index, entry ->
                         HistoryCard(
                             entry = entry,
                             isDark = isDarkTheme,
                             index = index,
-                            // When the card is tapped, tell the NavGraph about it
-                            onClick = { onEntryClick(entry) }
+                            onClick = { onEntryClick(entry) },
+                            onDelete = { viewModel.deleteHistoryItem(entry) }
                         )
                         Spacer(Modifier.height(12.dp))
                     }
@@ -357,12 +361,14 @@ private fun DetailRow(label: String, value: String, accent: Color, highlight: Bo
 // ─────────────────────────────────────────────────────────────────────────────
 //  History entry card
 // ─────────────────────────────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HistoryCard(
     entry: HistoryEntry,
     isDark: Boolean,
     index: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val cardBg = MaterialTheme.colorScheme.surface
     val textPrimary = MaterialTheme.colorScheme.onSurface
@@ -376,62 +382,101 @@ private fun HistoryCard(
         label = "entryAlpha"
     )
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .alpha(alpha)
-            .shadow(
-                elevation = if (isDark) 4.dp else 10.dp,
-                shape = RoundedCornerShape(16.dp),
-                spotColor = entry.accentColor.copy(alpha = 0.12f)
-            )
-            // Makes the whole card tappable — shows ripple on press
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            if (it == SwipeToDismissBoxValue.EndToStart || it == SwipeToDismissBoxValue.StartToEnd) {
+                onDelete()
+                true
+            } else {
+                false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val color = MaterialTheme.colorScheme.error
+            val alignment = when (dismissState.dismissDirection) {
+                SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                else -> Alignment.Center
+            }
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(entry.accentColor.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .alpha(alpha)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(color)
+                    .padding(horizontal = 24.dp),
+                contentAlignment = alignment
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Calculate,
-                    contentDescription = null,
-                    tint = entry.accentColor,
-                    modifier = Modifier.size(22.dp)
+                    Icons.Outlined.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.onError,
+                    modifier = Modifier.size(24.dp)
                 )
             }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(entry.title,    fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = textPrimary)
-                Text(entry.subtitle, fontSize = 12.sp, color = textMuted)
-                Spacer(Modifier.height(6.dp))
-                Text(entry.result,   fontSize = 13.sp, fontWeight = FontWeight.Medium, color = entry.accentColor)
-            }
-
-            Box(
+        },
+        modifier = Modifier.alpha(alpha)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(
+                    elevation = if (isDark) 4.dp else 10.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    spotColor = entry.accentColor.copy(alpha = 0.12f)
+                )
+                // Makes the whole card tappable — shows ripple on press
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = cardBg),
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
+            Row(
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Text(
-                    text = entry.timestamp,
-                    fontSize = 10.sp,
-                    color = textMuted,
-                    lineHeight = 14.sp,
-                    textAlign = TextAlign.End
-                )
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(entry.accentColor.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Calculate,
+                        contentDescription = null,
+                        tint = entry.accentColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(entry.title,    fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = textPrimary)
+                    Text(entry.subtitle, fontSize = 12.sp, color = textMuted)
+                    Spacer(Modifier.height(6.dp))
+                    Text(entry.result,   fontSize = 13.sp, fontWeight = FontWeight.Medium, color = entry.accentColor)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = entry.timestamp,
+                        fontSize = 10.sp,
+                        color = textMuted,
+                        lineHeight = 14.sp,
+                        textAlign = TextAlign.End
+                    )
+                }
             }
         }
     }

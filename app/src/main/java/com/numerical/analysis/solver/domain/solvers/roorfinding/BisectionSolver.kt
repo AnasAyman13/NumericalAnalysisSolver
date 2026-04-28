@@ -35,7 +35,9 @@ object BisectionSolver {
             xr = round((xl + xu) / 2.0)
 
             if (iter > 1) {
+
                 // Error Calculation + Rounding
+
                 val rawError = if (mode == ToleranceMode.ABSOLUTE) {
                     abs(xr - xrOld)
                 } else {
@@ -45,6 +47,7 @@ object BisectionSolver {
             }
 
             // f(x) Calculations + Rounding
+
             val fXl = round(f(xl))
             val fXu = round(f(xu))
             val fXr = round(f(xr))
@@ -63,6 +66,7 @@ object BisectionSolver {
             )
 
             // Stopping Criteria
+
             if (iter > 1 && error <= eps) break
             if (abs(fXr) < 1e-12) break
 

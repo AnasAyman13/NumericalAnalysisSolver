@@ -3,6 +3,7 @@ package com.numerical.analysis.solver.ui.state
 import com.numerical.analysis.solver.domain.methods.BracketingStep
 import com.numerical.analysis.solver.domain.methods.LinearSystemResult
 import com.numerical.analysis.solver.domain.methods.OpenMethodsStep
+import com.numerical.analysis.solver.domain.methods.SecantStep
 
 enum class ToleranceMode {
     ABSOLUTE,
@@ -20,6 +21,7 @@ data class RootFindingState(
     val toleranceMode: ToleranceMode = ToleranceMode.PERCENTAGE,
     val bracketingResults: List<BracketingStep> = emptyList(),
     val openMethodsResults: List<OpenMethodsStep> = emptyList(),
+    val secantResults: List<SecantStep> = emptyList(),
     val errorMessage: String? = null,
     val maxIterations: String = "100",
     val isLoading: Boolean = false,

@@ -129,5 +129,11 @@ class HistoryRepository(context: Context) {
         db.close()
         return list
     }
+
+    fun deleteEntry(entry: HistoryEntry) {
+        val db = dbHelper.writableDatabase
+        db.delete(HistoryDatabaseHelper.TABLE_HISTORY, "${HistoryDatabaseHelper.KEY_ID}=?", arrayOf(entry.id.toString()))
+        db.close()
+    }
 }
 

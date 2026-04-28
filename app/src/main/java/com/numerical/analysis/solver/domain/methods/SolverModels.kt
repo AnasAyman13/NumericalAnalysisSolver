@@ -22,6 +22,15 @@ data class OpenMethodsStep(
     val error: Double
 )
 
+data class SecantStep(
+    val iter: Int,
+    val xMinus1: Double,
+    val fXMinus1: Double,
+    val xi: Double,
+    val fXi: Double,
+    val error: Double
+)
+
 data class LinearStep(
     val title: String,
     val matrix: Array<DoubleArray>, // Includes augmented column

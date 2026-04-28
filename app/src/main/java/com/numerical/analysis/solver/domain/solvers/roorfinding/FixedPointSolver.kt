@@ -19,41 +19,44 @@ object FixedPointSolver {
         g: (Double) -> Double
     ): List<OpenMethodsStep> {
         val steps = mutableListOf<OpenMethodsStep>()
+        var xiMinus1 = 0.0
         var xi = x0
-        var xiPlus1 = 0.0
-        var error = 0.0
         var iter = 0
 
         while (iter <= maxIter) {
             yield()
-            
-            // Xi+1 (g(xi)) Calculation + Rounding
-            xiPlus1 = round(g(xi))
 
-            if (iter > 0) {
-                // Error Calculation + Rounding
+            // Calculate Error of the CURRENT xi (compared to xiMinus1)
+            val error = if (iter == 0) {
+                0.0
+            } else {
                 val rawError = if (mode == ToleranceMode.ABSOLUTE) {
-                    abs(xiPlus1 - xi)
+                    abs(xi - xiMinus1)
                 } else {
-                    if (abs(xiPlus1) < 1e-18) 0.0 else abs((xiPlus1 - xi) / xiPlus1) * 100.0
+                    if (abs(xi) < 1e-18) 0.0 else abs((xi - xiMinus1) / xi) * 100.0
                 }
-                error = round(rawError)
+                round(rawError)
             }
+
+            // Calculate NEXT xi (Xi+1)
+            val xiPlus1 = round(g(xi))
 
             steps.add(
                 OpenMethodsStep(
                     iter = iter,
                     xi = xi,
                     xiPlus1 = xiPlus1,
-                    fXi = 0.0, // not applicable for pure fixed point unless f(x) is tracked
-                    error = if (iter == 0) 0.0 else error
+                    fXi = 0.0, // not applicable for pure fixed point
+                    error = error
                 )
             )
 
-            // Stopping Criteria
+            // Stopping Criteria uses the error of the current xi
+            // This ensures the final step added to the table has error <= eps
             if (iter > 0 && error <= eps) break
-            if (abs(xiPlus1 - xi) < 1e-12) break
+            if (iter > 0 && abs(xi - xiMinus1) < 1e-12) break
 
+            xiMinus1 = xi
             xi = xiPlus1
             iter++
         }

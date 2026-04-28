@@ -50,23 +50,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.numerical.analysis.solver.domain.methods.BracketingStep
 import com.numerical.analysis.solver.domain.methods.OpenMethodsStep
+import com.numerical.analysis.solver.domain.methods.SecantStep
 import com.numerical.analysis.solver.ui.state.SolverViewModel
 import com.numerical.analysis.solver.ui.state.RootFindingState
 import com.numerical.analysis.solver.ui.theme.*
 import java.util.Locale
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Fixed column widths for the 8-column bisection table.
-// Using fixed Dp widths — combined with horizontalScroll — means columns never
-// get squeezed regardless of screen width or orientation.
-// ─────────────────────────────────────────────────────────────────────────────
+
 private val COL_ITER = 42.dp
 private val COL_NUM  = 100.dp
 private val COL_ERR  = 100.dp
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Screen
-// ─────────────────────────────────────────────────────────────────────────────
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootFindingResultsScreen(
@@ -77,8 +72,12 @@ fun RootFindingResultsScreen(
     val state by viewModel.rootFindingState.collectAsState()
 
     val isBracketing = method in listOf("Bisection", "False Position")
-    val iterationsCount = if (isBracketing) state.bracketingResults.size
-                          else              state.openMethodsResults.size
+    val isSecant     = method == "Secant"
+    val iterationsCount = when {
+        isBracketing -> state.bracketingResults.size
+        isSecant     -> state.secantResults.size
+        else         -> state.openMethodsResults.size
+    }
 
     Scaffold(
         containerColor = BackgroundLight,
@@ -108,19 +107,6 @@ fun RootFindingResultsScreen(
         }
     ) { padding ->
 
-        // ─────────────────────────────────────────────────────────────────────
-        // ARCHITECTURE NOTE
-        // ─────────────────────────────────────────────────────────────────────
-        // We use a single LazyColumn for the whole screen so that:
-        //   1. The summary card, title, AND all table rows scroll together.
-        //   2. "stickyHeader" keeps the table column headers always visible
-        //      even when the user scrolls deep into long iteration lists.
-        //   3. In landscape mode, nothing is cut off — the list is infinite.
-        //
-        // For the 8-column bracketing table we wrap every row (header & data)
-        // inside a shared horizontalScroll state so the header tracks with the
-        // data columns perfectly when the user swipes sideways.
-        // ─────────────────────────────────────────────────────────────────────
 
         val horizontalScrollState = rememberScrollState()  // shared by header + rows
 
@@ -143,10 +129,11 @@ fun RootFindingResultsScreen(
                     root            = state.rootResult ?: 0.0,
                     isConverged     = state.isConverged,
                     iterationsCount = iterationsCount,
-                    finalFx         = if (isBracketing)
-                                          state.bracketingResults.lastOrNull()?.fXr ?: 0.0
-                                      else
-                                          state.openMethodsResults.lastOrNull()?.fXi ?: 0.0,
+                    finalFx         = when {
+                        isBracketing -> state.bracketingResults.lastOrNull()?.fXr  ?: 0.0
+                        isSecant     -> state.secantResults.lastOrNull()?.fXi      ?: 0.0
+                        else         -> state.openMethodsResults.lastOrNull()?.fXi  ?: 0.0
+                    },
                     stoppingReason  = state.stoppingReason
                 )
             }
@@ -167,12 +154,11 @@ fun RootFindingResultsScreen(
             // visible area while the user scrolls through data rows below it.
             stickyHeader {
                 if (isBracketing) {
-                    // 8-column header — must share the same horizontalScroll
-                    // state as the data rows so they move together
+                    // 8-column header
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surface) // opaque so rows underneath don't bleed through
+                            .background(MaterialTheme.colorScheme.surface)
                             .horizontalScroll(horizontalScrollState)
                             .background(Slate50)
                             .border(1.dp, Slate200)
@@ -188,8 +174,27 @@ fun RootFindingResultsScreen(
                         HeaderCell("f(xr)",  COL_NUM)
                         HeaderCell("Error%", COL_ERR)
                     }
+                } else if (isSecant) {
+                    // 6-column header for Secant
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .horizontalScroll(horizontalScrollState)
+                            .background(Slate50)
+                            .border(1.dp, Slate200)
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HeaderCell("i",          COL_ITER)
+                        HeaderCell("X(i-1)",     COL_NUM)
+                        HeaderCell("F(X(i-1))",  COL_NUM)
+                        HeaderCell("X(i)",        COL_NUM)
+                        HeaderCell("F(X(i))",     COL_NUM)
+                        HeaderCell("Error%",      COL_ERR)
+                    }
                 } else {
-                    // 5-column header for open methods
+                    // 5-column header for open methods (Newton / Fixed Point)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -214,7 +219,7 @@ fun RootFindingResultsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(horizontalScrollState) // same state = synchronized
+                            .horizontalScroll(horizontalScrollState)
                             .background(
                                 if (state.isConverged && index == state.bracketingResults.lastIndex) MaterialTheme.colorScheme.primaryContainer
                                 else if (index % 2 == 0) MaterialTheme.colorScheme.surface
@@ -241,7 +246,39 @@ fun RootFindingResultsScreen(
                         )
                     }
                 }
+            } else if (isSecant) {
+                // ── Secant — 6-column scrollable rows ───────────────────────
+                itemsIndexed(state.secantResults) { index, step ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(horizontalScrollState)
+                            .background(
+                                if (state.isConverged && index == state.secantResults.lastIndex) MaterialTheme.colorScheme.primaryContainer
+                                else if (index % 2 == 0) MaterialTheme.colorScheme.surface
+                                else Slate50.copy(alpha = 0.55f)
+                            )
+                            .border(0.5.dp, Slate100)
+                            .padding(vertical = 9.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        DataCell(text = "${step.iter}",    width = COL_ITER, color = PrimaryColor, bold = true, align = TextAlign.Center)
+                        DataCell(text = fmt(step.xMinus1), width = COL_NUM)
+                        DataCell(text = fmt(step.fXMinus1),width = COL_NUM, color = fColor(step.fXMinus1))
+                        DataCell(text = fmt(step.xi),      width = COL_NUM, color = PrimaryColor, bold = true)
+                        DataCell(text = fmt(step.fXi),     width = COL_NUM, color = fColor(step.fXi))
+                        DataCell(
+                            text = if (step.iter == 0) "—" else {
+                                val errStr = String.format(Locale.US, "%.5f", step.error)
+                                if (state.isConverged && index == state.secantResults.lastIndex) "$errStr ✓" else errStr
+                            },
+                            width = COL_ERR,
+                            color = if (state.isConverged && index == state.secantResults.lastIndex) MaterialTheme.colorScheme.primary else errColor(step.error)
+                        )
+                    }
+                }
             } else {
+                // ── Newton / Fixed Point — 5-column rows ────────────────────
                 itemsIndexed(state.openMethodsResults) { index, step ->
                     Row(
                         modifier = Modifier

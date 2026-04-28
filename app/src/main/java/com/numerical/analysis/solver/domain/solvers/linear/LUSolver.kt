@@ -7,10 +7,6 @@ import kotlin.math.round
 
 object LUSolver {
 
-    /**
-     * Solves a system of equations using LU Decomposition.
-     * Implements Partial Pivoting (PA = LU) strictly for accuracy, returning only final results.
-     */
     fun solve(aMatrix: Array<DoubleArray>, bVector: DoubleArray): LinearSystemResult {
         if (aMatrix.size == 3) return solve3x3(aMatrix, bVector)
         return solveNxN(aMatrix, bVector)
@@ -20,7 +16,6 @@ object LUSolver {
         val a = Array(3) { r -> DoubleArray(4) { c -> if (c < 3) round5(aMatrix[r][c]) else round5(bVector[r]) } }
         val p = intArrayOf(0, 1, 2)
 
-        // --- 1. GJE Elimination Phase (with Partial Pivoting) ---
         var maxRow = 0
         if (abs(a[1][0]) > abs(a[maxRow][0])) maxRow = 1
         if (abs(a[2][0]) > abs(a[maxRow][0])) maxRow = 2
@@ -82,7 +77,6 @@ object LUSolver {
         val a = Array(n) { r -> aMatrix[r].copyOf() }
         val b = bVector.copyOf()
         val p = IntArray(n) { it }
-        // تم تصليح الغلطة هنا (r == c بدلاً من n == j)
         val l = Array(n) { r -> DoubleArray(n) { c -> if (r == c) 1.0 else 0.0 } }
 
         try {

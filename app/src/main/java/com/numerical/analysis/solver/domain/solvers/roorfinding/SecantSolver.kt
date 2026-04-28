@@ -1,15 +1,14 @@
 package com.numerical.analysis.solver.domain.solvers
 
-import com.numerical.analysis.solver.domain.methods.OpenMethodsStep
+import com.numerical.analysis.solver.domain.methods.SecantStep
 import com.numerical.analysis.solver.ui.state.ToleranceMode
 import kotlinx.coroutines.yield
 import kotlin.math.abs
 
 object SecantSolver {
 
-    private fun round(value: Double): Double {
-        return Math.round(value * 100000.0) / 100000.0
-    }
+    private fun round(value: Double): Double =
+        Math.round(value * 100000.0) / 100000.0
 
     suspend fun solve(
         xMinus1: Double,
@@ -18,51 +17,63 @@ object SecantSolver {
         maxIter: Int,
         mode: ToleranceMode,
         f: (Double) -> Double
-    ): List<OpenMethodsStep> {
-        val steps = mutableListOf<OpenMethodsStep>()
+    ): List<SecantStep> {
+        val steps = mutableListOf<SecantStep>()
         var xiMinus1 = xMinus1
-        var xi = x0
-        var error = 0.0
-        var iter = 0
+        var xi       = x0
 
+        // Row 0: initial state — log both starting points, error = 0
+        steps.add(
+            SecantStep(
+                iter     = 0,
+                xMinus1  = round(xiMinus1),
+                fXMinus1 = round(f(xiMinus1)),
+                xi       = round(xi),
+                fXi      = round(f(xi)),
+                error    = 0.0
+            )
+        )
+
+        var iter = 1
         while (iter <= maxIter) {
             yield()
-            
-            val fXiMinus1 = round(f(xiMinus1))
-            val fXi = round(f(xi))
 
-            val denom = fXiMinus1 - fXi
+            val fXiMinus1 = round(f(xiMinus1))
+            val fXi       = round(f(xi))
+
+            val denom = fXi - fXiMinus1
             if (abs(denom) < 1e-20) break
 
-            // Xi+1 Calculation + Rounding
-            val xiNext = round(xi - (fXi * (xiMinus1 - xi)) / denom)
+            // Formula: X_new = Xi - F(Xi)*(Xi - X(i-1)) / (F(Xi) - F(X(i-1)))
+            val xNew  = round(xi - (fXi * (xi - xiMinus1)) / denom)
+            val fXNew = round(f(xNew))
 
-            if (iter > 0) {
-                // Error Calculation + Rounding
-                val rawError = if (mode == ToleranceMode.ABSOLUTE) {
-                    abs(xi - xiMinus1)
-                } else {
-                    if (abs(xi) < 1e-18) 0.0 else abs((xi - xiMinus1) / xi) * 100.0
-                }
-                error = round(rawError)
+            // Error
+            val rawError = if (mode == ToleranceMode.ABSOLUTE) {
+                abs(xNew - xi)
+            } else {
+                if (abs(xNew) < 1e-18) 0.0 else abs((xNew - xi) / xNew) * 100.0
             }
+            val error = round(rawError)
 
+            // Each row shows the two points that PRODUCED xNew:
+            //   X(i-1) = xi (old current), X(i) = xNew (newly computed root estimate)
             steps.add(
-                OpenMethodsStep(
-                    iter = iter,
-                    xi = xiMinus1,
-                    xiPlus1 = xi,
-                    fXi = fXi,
-                    error = if (iter == 0) 0.0 else error
+                SecantStep(
+                    iter     = iter,
+                    xMinus1  = round(xi),
+                    fXMinus1 = fXi,
+                    xi       = xNew,
+                    fXi      = fXNew,
+                    error    = error
                 )
             )
 
-            // Stopping Criteria
-            if (iter > 0 && error <= eps) break
-            if (abs(fXi) < 1e-12) break
+            if (error <= eps)          break
+            if (abs(fXNew) < 1e-12)   break
 
             xiMinus1 = xi
-            xi = xiNext
+            xi       = xNew
             iter++
         }
         return steps
