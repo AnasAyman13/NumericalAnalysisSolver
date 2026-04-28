@@ -14,6 +14,8 @@ import com.numerical.analysis.solver.domain.methods.LinearAlgebraMethods
 import com.numerical.analysis.solver.data.HistoryRepository
 import com.numerical.analysis.solver.data.HistoryEntry
 import androidx.compose.ui.graphics.Color
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
@@ -105,7 +107,41 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                 "golden_section"
             }
 
-            else -> "linear_systems"
+            else -> {
+                val gson = Gson()
+
+                // Deserialize matrix — stored as Array<DoubleArray>
+                val matrixType = object : TypeToken<Array<DoubleArray>>() {}.type
+                val restoredMatrix: Array<DoubleArray> = try {
+                    if (entry.matrixData.isNotEmpty())
+                        gson.fromJson(entry.matrixData, matrixType)
+                    else Array(3) { DoubleArray(3) }
+                } catch (_: Exception) { Array(3) { DoubleArray(3) } }
+
+                // Deserialize vector — stored as DoubleArray
+                val vectorType = object : TypeToken<DoubleArray>() {}.type
+                val restoredVector: DoubleArray = try {
+                    if (entry.vectorData.isNotEmpty())
+                        gson.fromJson(entry.vectorData, vectorType)
+                    else DoubleArray(restoredMatrix.size)
+                } catch (_: Exception) { DoubleArray(restoredMatrix.size) }
+
+                val restoredSize = restoredMatrix.size
+
+                _linearSystemState.update { current ->
+                    current.copy(
+                        matrixA    = restoredMatrix,
+                        vectorB    = restoredVector,
+                        matrixSize = restoredSize,
+                        method     = entry.methodType.ifEmpty { current.method },
+                        result     = null,
+                        errorMessage = null,
+                        isInitial  = false
+                    )
+                }
+
+                "linear_systems"
+            }
         }
     }
 
@@ -314,13 +350,16 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                     val resultString = result.solution
                         .mapIndexed { idx, v -> "x${idx + 1}=${String.format(Locale.US, "%.5f", v)}" }
                         .joinToString(", ")
+                    val gson = Gson()
                     saveHistory(HistoryEntry(
                         title       = state.method.replaceFirstChar { it.uppercase() },
                         subtitle    = "${state.matrixA.size}x${state.matrixA.size} system",
                         result      = resultString,
                         timestamp   = SimpleDateFormat("dd MMM, hh:mm a", Locale.US).format(Date()),
                         accentColor = Color(0xFF1586EF),
-                        methodType  = state.method
+                        methodType  = state.method,
+                        matrixData  = gson.toJson(state.matrixA),
+                        vectorData  = gson.toJson(state.vectorB)
                     ))
                 }
             } catch (e: Exception) {

@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.toArgb
 class HistoryDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
-        const val DATABASE_VERSION = 3
+        const val DATABASE_VERSION = 4
         const val DATABASE_NAME   = "HistoryDatabase.db"
         const val TABLE_HISTORY   = "history"
 
@@ -30,6 +30,9 @@ class HistoryDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
         const val KEY_EPS           = "tolerance"
         const val KEY_MAX_ITER      = "max_iterations"
         const val KEY_METHOD_TYPE   = "method_type"
+        // New columns added in version 4 — Linear System matrix/vector storage
+        const val KEY_MATRIX_DATA   = "matrix_data"
+        const val KEY_VECTOR_DATA   = "vector_data"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -49,7 +52,9 @@ class HistoryDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABA
             "$KEY_XMINUS1 TEXT DEFAULT '', " +
             "$KEY_EPS TEXT DEFAULT '', " +
             "$KEY_MAX_ITER TEXT DEFAULT '100', " +
-            "$KEY_METHOD_TYPE TEXT DEFAULT '')"
+            "$KEY_METHOD_TYPE TEXT DEFAULT '', " +
+            "$KEY_MATRIX_DATA TEXT DEFAULT '', " +
+            "$KEY_VECTOR_DATA TEXT DEFAULT '')"
         )
     }
 
@@ -80,6 +85,8 @@ class HistoryRepository(context: Context) {
             put(HistoryDatabaseHelper.KEY_EPS,         entry.eps)
             put(HistoryDatabaseHelper.KEY_MAX_ITER,    entry.maxIterations)
             put(HistoryDatabaseHelper.KEY_METHOD_TYPE, entry.methodType)
+            put(HistoryDatabaseHelper.KEY_MATRIX_DATA, entry.matrixData)
+            put(HistoryDatabaseHelper.KEY_VECTOR_DATA, entry.vectorData)
         }
         db.insert(HistoryDatabaseHelper.TABLE_HISTORY, null, values)
         db.close()
@@ -111,7 +118,9 @@ class HistoryRepository(context: Context) {
                         xMinus1       = cursor.getString(cursor.getColumnIndexOrThrow(HistoryDatabaseHelper.KEY_XMINUS1))  ?: "",
                         eps           = cursor.getString(cursor.getColumnIndexOrThrow(HistoryDatabaseHelper.KEY_EPS))       ?: "",
                         maxIterations = cursor.getString(cursor.getColumnIndexOrThrow(HistoryDatabaseHelper.KEY_MAX_ITER))  ?: "100",
-                        methodType    = cursor.getString(cursor.getColumnIndexOrThrow(HistoryDatabaseHelper.KEY_METHOD_TYPE)) ?: ""
+                        methodType    = cursor.getString(cursor.getColumnIndexOrThrow(HistoryDatabaseHelper.KEY_METHOD_TYPE)) ?: "",
+                        matrixData    = cursor.getString(cursor.getColumnIndexOrThrow(HistoryDatabaseHelper.KEY_MATRIX_DATA)) ?: "",
+                        vectorData    = cursor.getString(cursor.getColumnIndexOrThrow(HistoryDatabaseHelper.KEY_VECTOR_DATA)) ?: ""
                     )
                 )
             } while (cursor.moveToNext())

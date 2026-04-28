@@ -18,6 +18,9 @@ data class HistoryEntry(
     val xMinus1: String = "",
     val eps: String = "",
     val maxIterations: String = "100",
-    val methodType: String = ""
+    val methodType: String = "",
+    // Linear System serialized inputs (Gson JSON strings)
+    val matrixData: String = "",
+    val vectorData: String = ""
 )
 
