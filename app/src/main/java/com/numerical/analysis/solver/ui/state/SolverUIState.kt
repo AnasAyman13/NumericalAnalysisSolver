@@ -35,5 +35,6 @@ data class LinearSystemState(
     val result: LinearSystemResult? = null,
     val errorMessage: String? = null,
     val method: String = "gauss",
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isInitial: Boolean = true
 )

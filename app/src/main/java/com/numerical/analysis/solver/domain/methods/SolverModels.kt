@@ -1,5 +1,7 @@
 package com.numerical.analysis.solver.domain.methods
 
+class SingularMatrixException(message: String) : Exception(message)
+
 // Models for Chapter 1: Root Finding Methods
 data class BracketingStep(
     val iter: Int,
@@ -20,11 +22,18 @@ data class OpenMethodsStep(
     val error: Double
 )
 
+data class LinearStep(
+    val title: String,
+    val matrix: Array<DoubleArray>, // Includes augmented column
+    val message: String? = null
+)
+
 // Models for Chapter 2: Linear Algebraic Equations
 data class LinearSystemResult(
     val solution: DoubleArray,
     val isSuccessful: Boolean,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val steps: List<LinearStep> = emptyList()
 )
 
 // Models for Chapter 3: Optimization

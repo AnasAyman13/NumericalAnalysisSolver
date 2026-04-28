@@ -297,15 +297,13 @@ fun LinearSystemScreen(
                                     for (c in 0 until state.matrixSize) {
                                         val current = state.matrixA[r][c]
                                         var textVal by remember(r, c) {
-                                            mutableStateOf(if (current == 0.0) "" else current.toString())
+                                            mutableStateOf(if (current == 0.0 && state.isInitial) "" else current.toString().removeSuffix(".0"))
                                         }
                                         OutlinedTextField(
                                             value         = textVal,
                                             onValueChange = {
                                                 textVal = it
-                                                it.toDoubleOrNull()?.let { d ->
-                                                    viewModel.updateMatrixElement(r, c, d)
-                                                }
+                                                viewModel.updateMatrixElement(r, c, it)
                                             },
                                             modifier      = Modifier.width(80.dp),
                                             placeholder   = {
@@ -366,15 +364,13 @@ fun LinearSystemScreen(
                                 for (r in 0 until state.matrixSize) {
                                     val current = state.vectorB[r]
                                     var textVal by remember(r) {
-                                        mutableStateOf(if (current == 0.0) "" else current.toString())
+                                        mutableStateOf(if (current == 0.0 && state.isInitial) "" else current.toString().removeSuffix(".0"))
                                     }
                                     OutlinedTextField(
                                         value         = textVal,
                                         onValueChange = {
                                             textVal = it
-                                            it.toDoubleOrNull()?.let { d ->
-                                                viewModel.updateVectorElement(r, d)
-                                            }
+                                            viewModel.updateVectorElement(r, it)
                                         },
                                         modifier      = Modifier.width(80.dp),
                                         placeholder   = {

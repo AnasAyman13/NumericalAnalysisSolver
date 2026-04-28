@@ -3,18 +3,8 @@ package com.numerical.analysis.solver.ui.screens.linearsystems
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -23,23 +13,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -89,21 +64,13 @@ fun LinearSystemResultsScreen(
             )
         }
     ) { padding ->
-        // ─────────────────────────────────────────────────────────────────────
-        // Outer scaffold body — a Column that:
-        //   • weight(1f) scrollable area for all result content
-        //   • fixed "New Calculation" button pinned at the bottom
-        //
-        // This structure means the button is always reachable and the content
-        // above scrolls freely in both portrait and landscape.
-        // ─────────────────────────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .navigationBarsPadding()
         ) {
-            // ── scrollable content area ──────────────────────────────────────
+            // Scrollable content area
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -113,7 +80,7 @@ fun LinearSystemResultsScreen(
             ) {
                 Spacer(Modifier.height(8.dp))
 
-                // ── Status card ──────────────────────────────────────────────
+                // Status card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -171,10 +138,9 @@ fun LinearSystemResultsScreen(
                     }
                 }
 
-                // ── Solution vector ──────────────────────────────────────────
+                // Solution vector
                 if (isSuccess && state.result?.solution != null) {
                     val solution = state.result!!.solution
-
                     Text(
                         "Solution Vector",
                         fontSize = 18.sp,
@@ -189,8 +155,6 @@ fun LinearSystemResultsScreen(
                         border = BorderStroke(1.dp, Slate100),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        // Plain Column — solution never has more than ~10 rows,
-                        // no need for LazyColumn; plain Column inside verticalScroll is fine.
                         Column {
                             solution.forEachIndexed { index, value ->
                                 Row(
@@ -242,10 +206,49 @@ fun LinearSystemResultsScreen(
                     }
                 }
 
+                // Step-by-step visualization
+                if (isSuccess && !state.result?.steps.isNullOrEmpty()) {
+                    Text(
+                        "Step-by-Step Visualization",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Slate900,
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+
+                    state.result?.steps?.forEach { step ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, Slate100),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(
+                                    step.title,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PrimaryColor
+                                )
+                                if (step.message != null) {
+                                    Text(
+                                        step.message,
+                                        fontSize = 12.sp,
+                                        color = Slate500,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                MatrixDisplay(step.matrix)
+                            }
+                        }
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
             }
 
-            // ── Pinned "New Calculation" button ──────────────────────────────
+            // Pinned "New Calculation" button
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
@@ -277,5 +280,45 @@ fun LinearSystemResultsScreen(
     }
 }
 
+@Composable
+fun MatrixDisplay(matrix: Array<DoubleArray>) {
+    val n = matrix.size
+    val m = if (n > 0) matrix[0].size else 0
 
-
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .border(1.dp, Slate100, RoundedCornerShape(8.dp))
+            .background(Slate50.copy(alpha = 0.5f))
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        for (i in 0 until n) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                for (j in 0 until m) {
+                    val value = matrix[i][j]
+                    val isAugmented = j == m - 1
+                    Box(
+                        modifier = Modifier
+                            .width(70.dp)
+                            .height(30.dp)
+                            .background(
+                                if (isAugmented) PrimaryColor.copy(alpha = 0.05f) else Color.Transparent,
+                                RoundedCornerShape(4.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = String.format(Locale.US, "%.3f", value),
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = if (isAugmented) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isAugmented) PrimaryColor else Slate700
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

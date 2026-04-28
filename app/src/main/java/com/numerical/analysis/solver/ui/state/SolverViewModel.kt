@@ -266,20 +266,28 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
             val newA    = if (matrixSize != null) Array(newSize) { DoubleArray(newSize) } else it.matrixA
             val newB    = if (matrixSize != null) DoubleArray(newSize) else it.vectorB
             it.copy(matrixSize = newSize, matrixA = newA, vectorB = newB,
-                    method = method ?: it.method, errorMessage = null, result = null)
+                    method = method ?: it.method, errorMessage = null, result = null, isInitial = matrixSize != null)
         }
     }
 
-    fun updateMatrixElement(row: Int, col: Int, value: Double) {
-        val currentA = _linearSystemState.value.matrixA
-        currentA[row][col] = value
-        _linearSystemState.update { it.copy(matrixA = currentA) }
+    private fun parseMatrixValue(input: String): Double {
+        return input.toDoubleOrNull() ?: 0.0
     }
 
-    fun updateVectorElement(index: Int, value: Double) {
-        val currentB = _linearSystemState.value.vectorB
-        currentB[index] = value
-        _linearSystemState.update { it.copy(vectorB = currentB) }
+    fun updateMatrixElement(row: Int, col: Int, value: String) {
+        _linearSystemState.update { state ->
+            val newA = state.matrixA.map { it.copyOf() }.toTypedArray()
+            newA[row][col] = parseMatrixValue(value)
+            state.copy(matrixA = newA, isInitial = false)
+        }
+    }
+
+    fun updateVectorElement(index: Int, value: String) {
+        _linearSystemState.update { state ->
+            val newB = state.vectorB.copyOf()
+            newB[index] = parseMatrixValue(value)
+            state.copy(vectorB = newB, isInitial = false)
+        }
     }
 
     fun solveLinearSystem() {
@@ -304,7 +312,7 @@ class SolverViewModel(application: Application) : AndroidViewModel(application) 
                 if (result.isSuccessful) {
                     _navigationEvents.emit("linear_systems_results")
                     val resultString = result.solution
-                        .mapIndexed { idx, v -> "x${idx + 1}=${String.format(Locale.US, "%.2f", v)}" }
+                        .mapIndexed { idx, v -> "x${idx + 1}=${String.format(Locale.US, "%.5f", v)}" }
                         .joinToString(", ")
                     saveHistory(HistoryEntry(
                         title       = state.method.replaceFirstChar { it.uppercase() },
