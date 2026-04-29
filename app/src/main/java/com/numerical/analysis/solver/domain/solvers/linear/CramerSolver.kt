@@ -8,16 +8,13 @@ import kotlin.math.round
 
 object CramerSolver {
 
-    /**
-     * Solves a system of linear equations using Cramer's Rule.
-     * Special optimization for 3x3 using university reference expansion.
-     */
+ 
     fun solve(aMatrix: Array<DoubleArray>, bVector: DoubleArray): LinearSystemResult {
         val n = bVector.size
         val steps = mutableListOf<LinearStep>()
         
         try {
-            // 1. Calculate main determinant (D)
+          
             val d = calculateDeterminant(aMatrix)
             if (abs(d) < 1e-12) {
                 throw SingularMatrixException("The main determinant (D) is 0.0. System has no unique solution.")

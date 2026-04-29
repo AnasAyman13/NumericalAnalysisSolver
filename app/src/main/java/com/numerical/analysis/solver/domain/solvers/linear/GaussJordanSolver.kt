@@ -9,24 +9,25 @@ import kotlin.math.round
 object GaussJordanSolver {
 
     /**
-     * Solves a system of linear equations using Gauss-Jordan Elimination with Partial Pivoting.
-     * Implements mid-loop rounding to 5 decimal places.
+     * Solves matching the university's "GJE" C++ logic:
+     * Forward Elimination (making lower triangle zeros) followed by Back Substitution.
+     * Includes Partial Pivoting to prevent division by zero.
      */
     fun solve(aMatrix: Array<DoubleArray>, bVector: DoubleArray): LinearSystemResult {
         val n = bVector.size
         val steps = mutableListOf<LinearStep>()
-        
-        // 1. Create augmented matrix
+
+        // 1. Create augmented matrix [A | b]
         val aug = Array(n) { i ->
             DoubleArray(n + 1) { j ->
                 if (j < n) round5(aMatrix[i][j]) else round5(bVector[i])
             }
         }
-        steps.add(LinearStep("Initial Augmented Matrix", copyMatrix(aug)))
 
         try {
-            for (k in 0 until n) {
-                // PARTIAL PIVOTING
+            // --- Forward Elimination
+            for (k in 0 until n - 1) {
+                // Partial Pivoting
                 var maxRow = k
                 var maxVal = abs(aug[k][k])
                 for (i in k + 1 until n) {
@@ -40,35 +41,36 @@ object GaussJordanSolver {
                     val temp = aug[k]
                     aug[k] = aug[maxRow]
                     aug[maxRow] = temp
-                    steps.add(LinearStep("Partial Pivoting: Swap R${k+1} with R${maxRow+1}", copyMatrix(aug)))
                 }
 
                 if (abs(aug[k][k]) < 1e-12) {
-                    throw SingularMatrixException("Pivot at R${k+1} is 0.0 even after partial pivoting.")
+                    throw SingularMatrixException("System is singular (division by zero).")
                 }
 
-                // Normalization of Pivot Row
-                val pivotValue = aug[k][k]
-                for (j in k until n + 1) {
-                    aug[k][j] = round5(aug[k][j] / pivotValue)
-                }
-                steps.add(LinearStep("Normalize R${k+1} (Divide by $pivotValue)", copyMatrix(aug)))
-
-                // Eliminate all other rows
-                for (i in 0 until n) {
-                    if (i != k) {
-                        val factor = aug[i][k] // No need to round factor yet as it's directly from matrix
-                        for (j in k until n + 1) {
-                            aug[i][j] = round5(aug[i][j] - round5(factor * aug[k][j]))
-                        }
-                        steps.add(LinearStep("R${i+1} = R${i+1} - (${factor}) * R${k+1}", copyMatrix(aug)))
+                //  m21, m31, m32
+                for (i in k + 1 until n) {
+                    val m = round5(aug[i][k] / aug[k][k])
+                    for (j in k until n + 1) {
+                        aug[i][j] = round5(aug[i][j] - round5(m * aug[k][j]))
                     }
                 }
             }
 
-            // Extract results from normalized augmented column
-            val result = DoubleArray(n) { i -> aug[i][n] }
-            return LinearSystemResult(result, true, steps = steps)
+            if (abs(aug[n - 1][n - 1]) < 1e-12) {
+                throw SingularMatrixException("System is singular.")
+            }
+
+            val x = DoubleArray(n)
+            for (i in n - 1 downTo 0) {
+                var sum = 0.0
+                for (j in i + 1 until n) {
+                    sum = round5(sum + round5(aug[i][j] * x[j]))
+                }
+                // x = (b - sum) / a[i][i]
+                x[i] = round5(round5(aug[i][n] - sum) / aug[i][i])
+            }
+
+            return LinearSystemResult(x, true, steps = steps)
 
         } catch (e: SingularMatrixException) {
             return LinearSystemResult(DoubleArray(0), false, e.message, steps)
@@ -77,9 +79,5 @@ object GaussJordanSolver {
 
     private fun round5(v: Double): Double {
         return round(v * 100000.0) / 100000.0
-    }
-
-    private fun copyMatrix(m: Array<DoubleArray>): Array<DoubleArray> {
-        return Array(m.size) { m[it].copyOf() }
     }
 }
