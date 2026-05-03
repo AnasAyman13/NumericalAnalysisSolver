@@ -76,8 +76,8 @@ Developed as a final project for the **Numerical Analysis (CS-252)** course, the
 * Handles implicit multiplication automatically
 
 ```text
-5x → 5 * x
-2(x+1) → 2 * (x+1)
+X^2 → X²
+2*(x+1) → 2(x+1)
 ```
 
 ---
@@ -203,8 +203,8 @@ NumericalAnalysisSolver/
 ### 🧑‍💻 Developed By
 
 * **Anas Ayman El-Gebaili** (Native Android Developer)
-* Adham Sayed Kamel
-* Ahmed Mohamed Hamid
+* Adham Sayed Kamel         (Native Android Developer)
+* Ahmed Mohamed Hamid       (Native Android Developer)
 
 ---
 
@@ -228,8 +228,6 @@ NumericalAnalysisSolver/
 
 * Graph plotting for functions 📈
 * Export results as PDF 📄
-* Dark/Light theme customization 🌗
-* More numerical methods (Interpolation, Integration, ODEs)
 
 ---
 
